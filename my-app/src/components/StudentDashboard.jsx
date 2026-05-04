@@ -97,14 +97,14 @@ const StudentDashboard = () => {
     const approvedTopic = profile?.approvedTopic;
 
     return (
-        <div>
-            <div className="grid-cols-4" style={{ gridTemplateColumns: 'minmax(250px, 300px) 1fr' }}>
-                <div>
-                    <div className="card" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+        <div className="student-dashboard">
+            <div className="stat-card-row" style={{ gridTemplateColumns: 'minmax(280px, 350px) 1fr' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="card" style={{ textAlign: 'center' }}>
                         <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#eff6ff', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem auto' }}>
                             <User size={32} />
                         </div>
-                        <h3 className="page-title">{user.name}</h3>
+                        <h3 className="page-title" style={{ fontSize: '1.25rem' }}>{user.name}</h3>
                         <p className="page-subtitle">Matric: {user.identifier}</p>
                         
                         <div style={{ marginTop: '2rem', textAlign: 'left', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
@@ -116,13 +116,13 @@ const StudentDashboard = () => {
                             </div>
                             <div className="flex-between" style={{ marginBottom: '0.75rem' }}>
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>SUPERVISOR</span>
-                                <span style={{ color: profile?.supervisor ? 'var(--accent-color)' : 'var(--danger)', fontSize: '0.875rem', fontWeight: 600 }}>
-                                    {profile?.supervisor ? profile.supervisor.name : 'Waiting for Admin...'}
+                                <span style={{ color: profile?.supervisor ? 'var(--accent-color)' : 'var(--danger)', fontSize: '0.875rem', fontWeight: 600, textAlign: 'right' }}>
+                                    {profile?.supervisor ? profile.supervisor.name : 'Waiting...'}
                                 </span>
                             </div>
                             <div className="flex-between">
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>DEPARTMENT</span>
-                                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Computer science</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Comp Science</span>
                             </div>
                         </div>
                     </div>
@@ -149,9 +149,9 @@ const StudentDashboard = () => {
                     </div>
                 </div>
 
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {approvedTopic && status === 'approved' && (
-                        <div className="card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '1px solid #bbf7d0' }}>
+                        <div className="card" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', border: '1px solid #bbf7d0' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#16a34a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <CheckCircle2 size={24} />
@@ -166,7 +166,7 @@ const StudentDashboard = () => {
                     )}
 
                     {status !== 'approved' && (
-                        <div className="card" style={{ marginBottom: '1.5rem' }}>
+                        <div className="card">
                             <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem' }}>Propose Topics</h4>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0 0 1.5rem 0' }}>Provide at least two topic choices for your supervisor to review.</p>
                             
@@ -183,7 +183,7 @@ const StudentDashboard = () => {
                                     </div>
                                 ))}
                                 
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1rem' }}>
                                     <button type="button" className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }} onClick={addTopicField}>+ Add Option</button>
                                     <button type="button" className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderColor: '#cbd5e1' }} onClick={clearForm}><RotateCcw size={14} /> Clear Form</button>
                                     <button type="submit" className="btn btn-primary" style={{ marginLeft: 'auto' }}>Submit Topics</button>

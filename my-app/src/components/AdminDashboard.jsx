@@ -14,12 +14,8 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             const [queueRes, statsRes] = await Promise.all([
-                axios.get(API_BASE_URL + '/api/projects/admin/queue', {
-                    headers: { Authorization: `Bearer ${user.token}` }
-                }),
-                axios.get(API_BASE_URL + '/api/users/admin/stats', {
-                    headers: { Authorization: `Bearer ${user.token}` }
-                })
+                axios.get(API_BASE_URL + '/api/projects/admin/queue'),
+                axios.get(API_BASE_URL + '/api/users/admin/stats')
             ]);
             setQueue(queueRes.data);
             setStats(statsRes.data);
@@ -38,15 +34,12 @@ const AdminDashboard = () => {
                 socket.off('project_status_updated');
             };
         }
-    }, [socket, user.token]);
+    }, [socket]);
 
     const handleApproval = async (status) => {
         if (!selectedStudent) return;
         try {
-            const res = await axios.put(`${API_BASE_URL}/api/projects/${selectedStudent._id}/admin-approval`, 
-                { status },
-                { headers: { Authorization: `Bearer ${user.token}` } }
-            );
+            const res = await axios.put(`${API_BASE_URL}/api/projects/${selectedStudent._id}/admin-approval`, { status });
             setQueue(prev => prev.map(s => s._id === res.data._id ? res.data : s));
             setSelectedStudent(res.data);
             alert(`Topic ${status === 'approved' ? 'Officially Approved' : 'Rejected'}`);
@@ -56,16 +49,16 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div>
+        <div className="admin-dashboard">
             <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Admin Dashboard</h2>
+                <h2 className="page-title" style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Admin Dashboard</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Final verification and system oversight.</p>
             </div>
 
-            <div className="stat-card-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="stat-card-row">
                 <div className="stat-card success-top">
                     <div className="stat-title">Total Students <Users size={16} /></div>
-                    <div className="stat-value">{stats?.totals.students || '...'}</div>
+                    <div className="stat-value">{stats?.totals.students || '0'}</div>
                 </div>
                 <div className="stat-card warning-top">
                     <div className="stat-title">Topic Queue <Clock size={16} /></div>
@@ -73,15 +66,15 @@ const AdminDashboard = () => {
                 </div>
                 <div className="stat-card success-top">
                     <div className="stat-title">Approved Topics <CheckCircle2 size={16} /></div>
-                    <div className="stat-value">{stats?.totals.approvedProjects || '...'}</div>
+                    <div className="stat-value">{stats?.totals.approvedProjects || '0'}</div>
                 </div>
-                <div className="stat-card info-top">
+                <div className="stat-card">
                     <div className="stat-title">Supervisors <Shield size={16} /></div>
-                    <div className="stat-value">{stats?.totals.supervisors || '...'}</div>
+                    <div className="stat-value">{stats?.totals.supervisors || '0'}</div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(600px, 2fr) 1fr', gap: '2rem' }}>
+            <div className="stat-card-row" style={{ gridTemplateColumns: 'minmax(0, 2fr) 1fr', alignItems: 'start' }}>
                 <div>
                     <div className="table-container">
                         <div className="table-header">
@@ -91,7 +84,7 @@ const AdminDashboard = () => {
                             <thead>
                                 <tr>
                                     <th>Student</th>
-                                    <th>Proposed Approved Topic</th>
+                                    <th>Approved Topic</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -100,35 +93,47 @@ const AdminDashboard = () => {
                                     <tr key={s._id} onClick={() => setSelectedStudent(s)} className={selectedStudent?._id === s._id ? 'active' : ''} style={{ cursor: 'pointer' }}>
                                         <td>
                                             <div style={{ fontWeight: 600 }}>{s.name}</div>
-                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>ID: {s.identifier}</div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{s.identifier}</div>
                                         </td>
-                                        <td>{s.approvedTopic?.title || 'No Title'}</td>
+                                        <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {s.approvedTopic?.title || 'No Title'}
+                                        </td>
                                         <td>
                                             <span className={`badge ${s.topicStatus === 'approved' ? 'badge-approved' : 'badge-warning'}`}>
-                                                {s.topicStatus === 'approved_by_supervisor' ? 'AWAITING ADMIN' : s.topicStatus.toUpperCase()}
+                                                {s.topicStatus === 'approved_by_supervisor' ? 'AWAITING' : s.topicStatus.toUpperCase()}
                                             </span>
                                         </td>
                                     </tr>
                                 ))}
+                                {queue.length === 0 && (
+                                    <tr>
+                                        <td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>The queue is currently empty.</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
                 </div>
                 
-                <div className="card">
-                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem' }}>Final Decision</h3>
+                <div className="card" style={{ position: 'sticky', top: '1rem' }}>
+                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>Final Decision</h3>
                     {selectedStudent ? (
                         <>
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>TOPIC TO APPROVE</div>
-                                <h4 style={{ margin: '0.5rem 0', fontSize: '1rem' }}>{selectedStudent.approvedTopic?.title}</h4>
-                                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{selectedStudent.approvedTopic?.description}</p>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-color)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>TOPIC TO APPROVE</div>
+                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', lineHeight: 1.4 }}>{selectedStudent.approvedTopic?.title}</h4>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{selectedStudent.approvedTopic?.description}</p>
                             </div>
-                            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1rem' }} onClick={() => handleApproval('approved')}>Confirm Approval</button>
-                            <button className="btn btn-outline" style={{ width: '100%', color: 'var(--danger)' }} onClick={() => handleApproval('correction')}>Reject to Supervisor</button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleApproval('approved')}>Confirm Approval</button>
+                                <button className="btn btn-outline" style={{ width: '100%', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }} onClick={() => handleApproval('correction')}>Reject to Supervisor</button>
+                            </div>
                         </>
                     ) : (
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Select a student from the queue to verify their topic.</p>
+                        <div style={{ textAlign: 'center', padding: '1rem' }}>
+                            <Search size={32} color="var(--border-color)" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Select a student from the queue to verify their topic.</p>
+                        </div>
                     )}
                 </div>
             </div>

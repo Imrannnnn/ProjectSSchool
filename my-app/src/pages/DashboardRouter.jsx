@@ -49,27 +49,27 @@ const DashboardRouter = () => {
             <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="brand-title">
                     <Database size={24} />
-                    Scholarly
-                    <button className="menu-toggle" onClick={closeSidebar} style={{ marginLeft: 'auto', background: 'none' }}>
+                    <span>Scholarly</span>
+                    <button className="menu-toggle" onClick={closeSidebar} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-secondary)' }}>
                         <X size={20} />
                     </button>
                 </div>
                 
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
                     <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); closeSidebar(); }}>
                         <LayoutDashboard size={18} /> {user.role === 'admin' ? 'Overview' : 'Dashboard'}
                     </div>
                     
                     {user.role === 'student' && (
-                        <>
-                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}><Database size={18} /> Approved Topics</div>
-                        </>
+                        <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}>
+                            <Database size={18} /> Approved Topics
+                        </div>
                     )}
                     
                     {user.role === 'supervisor' && (
-                        <>
-                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}><Database size={18} /> Approved Topics</div>
-                        </>
+                        <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}>
+                            <Database size={18} /> Approved Topics
+                        </div>
                     )}
 
                     {user.role === 'admin' && (
@@ -88,18 +88,21 @@ const DashboardRouter = () => {
                     )}
                 </div>
 
-                <div className="nav-item" onClick={logout} style={{ color: 'var(--danger)', marginTop: 'auto' }}>
+                <div className="nav-item" onClick={logout} style={{ color: 'var(--danger)', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
                     <LogOut size={18} /> Logout
                 </div>
             </div>
             
             <div className="main-content">
                 <div className="top-bar">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button className="menu-toggle" onClick={toggleSidebar} style={{ display: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <button className="menu-toggle" onClick={toggleSidebar}>
                             <Menu size={24} />
                         </button>
-                        <h1 className="page-title" style={{ display: 'none' }}>Dashboard</h1> 
+                        <h1 className="page-title">
+                            {activeTab === 'dashboard' ? (user.role === 'admin' ? 'System Overview' : 'My Dashboard') : 
+                             activeTab === 'repository' ? 'Topics Repository' : 'Management'}
+                        </h1> 
                     </div>
                     
                     <div className="user-controls">
@@ -119,9 +122,11 @@ const DashboardRouter = () => {
                     </div>
                 </div>
                 
-                {activeTab === 'dashboard' ? renderDashboard() : null}
-                {activeTab === 'repository' ? <ApprovedTopicsRepository /> : null}
-                {activeTab === 'assignment' ? <AdminStudentAssignment /> : null}
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    {activeTab === 'dashboard' ? renderDashboard() : null}
+                    {activeTab === 'repository' ? <ApprovedTopicsRepository /> : null}
+                    {activeTab === 'assignment' ? <AdminStudentAssignment /> : null}
+                </div>
             </div>
         </div>
     );

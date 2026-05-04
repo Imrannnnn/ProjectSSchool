@@ -56,13 +56,13 @@ const SupervisorDashboard = () => {
     };
 
     return (
-        <div>
+        <div className="supervisor-dashboard">
             <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Supervisor Dashboard</h2>
+                <h2 className="page-title" style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>Supervisor Dashboard</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Welcome, {user.name}. You have {stats.pending} topics awaiting review.</p>
             </div>
 
-            <div className="stat-card-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="stat-card-row">
                 <div className="stat-card success-top">
                     <div className="stat-title">My Students <FileText size={16} /></div>
                     <div className="stat-value">{stats.total}</div>
@@ -81,10 +81,10 @@ const SupervisorDashboard = () => {
                 </div>
             </div>
 
-            <div className="grid-cols-2" style={{ gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="grid-cols-2" style={{ marginBottom: '2rem' }}>
                 <div className="card">
                     <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><PieChart size={18} /> Student Analytics</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="grid-cols-2" style={{ gap: '1rem' }}>
                         <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>SUBMISSION RATE</div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.submissions} / {stats.total}</div>
@@ -121,16 +121,23 @@ const SupervisorDashboard = () => {
                             <tr key={s._id} onClick={() => setSelectedStudent(s)} className={selectedStudent?._id === s._id ? 'active' : ''} style={{ cursor: 'pointer' }}>
                                 <td>{s.name}</td>
                                 <td><span className={`badge ${s.topicStatus === 'approved' ? 'badge-approved' : 'badge-warning'}`}>{s.topicStatus.toUpperCase()}</span></td>
-                                <td>{s.approvedTopic?.title || (s.proposedTopics?.length > 0 ? 'Pending Selection' : 'No Submission')}</td>
+                                <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {s.approvedTopic?.title || (s.proposedTopics?.length > 0 ? 'Pending Selection' : 'No Submission')}
+                                </td>
                                 <td><MoreVertical size={16} /></td>
                             </tr>
                         ))}
+                        {students.length === 0 && (
+                            <tr>
+                                <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No students assigned yet.</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {selectedStudent && (
-                <div className="card" style={{ marginTop: '2rem' }}>
+                <div className="card" style={{ marginTop: '2rem', borderTop: '4px solid var(--accent-color)' }}>
                     <div style={{ marginBottom: '1.5rem' }}>
                         <h3 style={{ margin: 0 }}>Review Proposals: {selectedStudent.name}</h3>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Review the submitted topics and provide feedback below.</p>
@@ -147,20 +154,22 @@ const SupervisorDashboard = () => {
                         ></textarea>
                     </div>
 
-                    {selectedStudent.proposedTopics?.map((topic, idx) => (
-                        <div key={idx} style={{ marginBottom: '1.5rem', padding: '1.25rem', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'white' }}>
-                            <div className="flex-between" style={{ marginBottom: '0.75rem' }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-color)' }}>TOPIC OPTION {idx + 1}</div>
-                                <button className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => handleReview('approved_by_supervisor', idx)}>Approve This Topic</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {selectedStudent.proposedTopics?.map((topic, idx) => (
+                            <div key={idx} style={{ padding: '1.25rem', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'white' }}>
+                                <div className="flex-between" style={{ marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-color)' }}>TOPIC OPTION {idx + 1}</div>
+                                    <button className="btn btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => handleReview('approved_by_supervisor', idx)}>Approve This Topic</button>
+                                </div>
+                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{topic.title}</h4>
+                                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>{topic.description}</p>
                             </div>
-                            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{topic.title}</h4>
-                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>{topic.description}</p>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
-                        <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => handleReview('correction')}>Request Refinement / New Topics</button>
-                        <button className="btn btn-outline" style={{ border: 'none', color: 'var(--danger)' }} onClick={() => handleReview('none')}>Reject All</button>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+                        <button className="btn btn-outline" style={{ flex: 1, minWidth: '200px' }} onClick={() => handleReview('correction')}>Request Refinement / New Topics</button>
+                        <button className="btn btn-outline" style={{ border: 'none', color: 'var(--danger)', flex: 1 }} onClick={() => handleReview('none')}>Reject All</button>
                     </div>
                 </div>
             )}

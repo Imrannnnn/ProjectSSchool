@@ -19,9 +19,7 @@ const ApprovedTopicsRepository = () => {
     const fetchApprovedProjects = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/projects/approved?letter=${letter}&page=${page}&limit=${limit}`, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
+            const res = await axios.get(`${API_BASE_URL}/api/projects/approved?letter=${letter}&page=${page}&limit=${limit}`);
             setProjects(res.data.projects);
             setTotalPages(res.data.totalPages);
             setTotal(res.data.total);
@@ -30,7 +28,7 @@ const ApprovedTopicsRepository = () => {
         } finally {
             setLoading(false);
         }
-    }, [letter, page, user.token]);
+    }, [letter, page]);
 
     useEffect(() => {
         fetchApprovedProjects();
@@ -38,35 +36,35 @@ const ApprovedTopicsRepository = () => {
 
     const handleLetterClick = (l) => {
         setLetter(l);
-        setPage(1); // Reset to first page whenever filtering changes
+        setPage(1);
     };
 
     return (
-        <div>
+        <div className="repository-container">
             <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Database size={24} color="var(--accent-color)" /> Approved Topics Repository
+                <h2 className="page-title" style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Database size={24} color="var(--accent-color)" /> Approved Topics
                 </h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>View all officially approved standard topics. Filter alphabetically by project title.</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.5rem' }}>View all officially approved topics. Filter alphabetically by title.</p>
             </div>
 
-            <div className="card" style={{ marginBottom: '1.5rem', borderTop: '4px solid var(--accent-color)' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
+            <div className="card" style={{ marginBottom: '1.5rem', borderTop: '4px solid var(--accent-color)', padding: '1rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', justifyContent: 'center' }}>
                     {alphabets.map(alpha => (
                         <button 
                             key={alpha} 
                             onClick={() => handleLetterClick(alpha)}
                             style={{ 
-                                padding: '0.5rem 0.75rem', 
+                                padding: '0.4rem 0.6rem', 
                                 border: `1px solid ${letter === alpha ? 'var(--accent-color)' : 'var(--border-color)'}`,
-                                borderRadius: '8px',
+                                borderRadius: '6px',
                                 background: letter === alpha ? 'var(--accent-color)' : 'white',
                                 color: letter === alpha ? 'white' : 'var(--text-primary)',
                                 fontWeight: letter === alpha ? '600' : '500',
                                 cursor: 'pointer',
-                                fontSize: '0.875rem',
+                                fontSize: '0.75rem',
                                 transition: 'all 0.2s',
-                                minWidth: alpha === 'All' ? 'auto' : '36px'
+                                minWidth: alpha === 'All' ? '50px' : '32px'
                             }}
                         >
                             {alpha}
@@ -93,7 +91,7 @@ const ApprovedTopicsRepository = () => {
                         <thead>
                             <tr>
                                 <th>Project Topic</th>
-                                <th>Student Details</th>
+                                <th>Student</th>
                                 <th>Reg Number</th>
                                 <th>Status</th>
                             </tr>
@@ -107,20 +105,20 @@ const ApprovedTopicsRepository = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#f1f5f9', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.75rem' }}>
+                                            <div className="avatar" style={{ width: 24, height: 24, fontSize: '0.65rem' }}>
                                                 {p.student?.name ? p.student.name.charAt(0).toUpperCase() : '?'}
                                             </div>
-                                            <span style={{ fontWeight: 500 }}>{p.student?.name || 'Unknown User'}</span>
+                                            <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{p.student?.name || 'Unknown User'}</span>
                                         </div>
                                     </td>
                                     <td>
-                                        <span style={{ fontFamily: 'monospace', background: '#f8fafc', padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
+                                        <span style={{ fontFamily: 'monospace', background: '#f8fafc', padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
                                             {p.student?.identifier || 'N/A'}
                                         </span>
                                     </td>
                                     <td>
-                                        <span className="badge" style={{ backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                            <Award size={12} /> Approved
+                                        <span className="badge badge-approved" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.65rem' }}>
+                                            <Award size={10} /> Approved
                                         </span>
                                     </td>
                                 </tr>
@@ -130,19 +128,19 @@ const ApprovedTopicsRepository = () => {
                 )}
                 
                 {totalPages > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', background: '#f8fafc' }}>
-                        <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            Showing page {page} of {totalPages}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', background: '#f8fafc', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            Page {page} of {totalPages}
                         </span>
                         
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', justifyContent: 'center' }}>
                             <button 
                                 className="btn btn-outline" 
-                                style={{ padding: '0.5rem 0.75rem', background: page === 1 ? '#e2e8f0' : 'transparent', border: '1px solid var(--border-color)', cursor: page === 1 ? 'not-allowed' : 'pointer' }} 
+                                style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }} 
                                 disabled={page === 1}
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                             >
-                                <ChevronLeft size={16} /> Prev
+                                <ChevronLeft size={14} />
                             </button>
                             
                             {[...Array(totalPages)].map((_, i) => {
@@ -152,33 +150,33 @@ const ApprovedTopicsRepository = () => {
                                             key={i + 1}
                                             onClick={() => setPage(i + 1)}
                                             style={{
-                                                padding: '0.5rem 1rem',
+                                                padding: '0.4rem 0.75rem',
                                                 border: `1px solid ${page === i + 1 ? 'var(--accent-color)' : 'var(--border-color)'}`,
                                                 background: page === i + 1 ? 'var(--accent-color)' : 'white',
                                                 color: page === i + 1 ? 'white' : 'var(--text-primary)',
-                                                borderRadius: '8px',
+                                                borderRadius: '6px',
                                                 fontWeight: 600,
-                                                cursor: 'pointer'
+                                                fontSize: '0.75rem',
+                                                cursor: 'pointer',
+                                                minWidth: '32px'
                                             }}
                                         >
                                             {i + 1}
                                         </button>
                                     )
-                                } else if (i + 1 === 2 && page > 3) {
-                                    return <span key={i + 1} style={{ padding: '0.5rem' }}>...</span>
-                                } else if (i + 1 === totalPages - 1 && page < totalPages - 2) {
-                                    return <span key={i + 1} style={{ padding: '0.5rem' }}>...</span>
+                                } else if ((i + 1 === 2 && page > 3) || (i + 1 === totalPages - 1 && page < totalPages - 2)) {
+                                    return <span key={i + 1} style={{ padding: '0.4rem', fontSize: '0.75rem' }}>...</span>
                                 }
                                 return null;
                             })}
                             
                             <button 
                                 className="btn btn-outline" 
-                                style={{ padding: '0.5rem 0.75rem', background: page === totalPages ? '#e2e8f0' : 'transparent', border: '1px solid var(--border-color)', cursor: page === totalPages ? 'not-allowed' : 'pointer' }} 
+                                style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }} 
                                 disabled={page === totalPages}
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                             >
-                                Next <ChevronRight size={16} />
+                                <ChevronRight size={14} />
                             </button>
                         </div>
                     </div>
