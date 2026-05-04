@@ -17,9 +17,13 @@ app.set('trust proxy', 1); // Trust first proxy (Render)
 const server = http.createServer(app);
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'https://projectproposalcss.netlify.app',
+    origin: [
+        process.env.FRONTEND_URL,
+        'https://projectproposalcss.netlify.app',
+        'http://localhost:5173'
+    ].filter(Boolean),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -31,8 +35,12 @@ app.get('/health', (req, res) => {
 
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || '*',
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        origin: [
+            process.env.FRONTEND_URL,
+            'https://projectproposalcss.netlify.app',
+            'http://localhost:5173'
+        ].filter(Boolean),
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         credentials: true
     }
 });
