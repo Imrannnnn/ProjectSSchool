@@ -11,41 +11,42 @@ const INACTIVITY_LIMIT = 25 * 60 * 1000; // 25 mins of local inactivity (leads t
 const WARNING_LIMIT = 5 * 60 * 1000; // 5 mins of warning before logout
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        const storedUser = localStorage.getItem('user');
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
     const [loading, setLoading] = useState(true);
     const [socket, setSocket] = useState(null);
     const [showInactivityWarning, setShowInactivityWarning] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(300); // 5 mins in seconds
+    const [timeLeft, setTimeLeft] = useState(300);
 
     const activityTimeout = useRef(null);
     const warningInterval = useRef(null);
 
-    const logout = useCallback(async () => {
+    const logout = useCallback(async (isAuto = false) => {
         try {
             const refreshToken = localStorage.getItem('refreshToken');
-            await axios.post(API_BASE_URL + '/api/auth/logout', { refreshToken });
-            
+            // If it's an auto-logout due to error, we might not want to wait for network
+            if (!isAuto) {
+                await axios.post(API_BASE_URL + '/api/auth/logout', { refreshToken });
+            }
+        } catch (err) {
+            console.error('Logout request failed', err);
+        } finally {
             setUser(null);
             localStorage.removeItem('user'); 
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
-
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
             }
             setShowInactivityWarning(false);
-        } catch (err) {
-            console.error('Logout failed', err);
-            // Even if request fails, clear local state
-            setUser(null);
-            localStorage.removeItem('user');
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
         }
     }, [socket]);
 
     const connectSocket = useCallback((u) => {
+        if (!u?._id) return;
         const newSocket = io(API_BASE_URL + '');
         newSocket.on('connect', () => {
             newSocket.emit('register', u._id);
@@ -59,7 +60,7 @@ export const AuthProvider = ({ children }) => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     clearInterval(warningInterval.current);
-                    logout();
+                    logout(true); // Auto logout
                     return 0;
                 }
                 return prev - 1;
@@ -81,7 +82,10 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('refreshToken', refreshToken);
             return accessToken;
         } catch (err) {
-            logout();
+            // Only force logout if it's a 401/403 (Invalid token)
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                logout(true);
+            }
             throw err;
         }
     }, [logout]);
@@ -92,7 +96,7 @@ export const AuthProvider = ({ children }) => {
             setTimeLeft(300);
             if (warningInterval.current) clearInterval(warningInterval.current);
             // Ping server to reset server-side idle timer
-            refreshTokenFunc().catch(() => logout());
+            refreshTokenFunc().catch(() => {});
         }
         
         if (activityTimeout.current) clearTimeout(activityTimeout.current);
@@ -101,24 +105,22 @@ export const AuthProvider = ({ children }) => {
             setShowInactivityWarning(true);
             startWarningCountdown();
         }, INACTIVITY_LIMIT);
-    }, [showInactivityWarning, startWarningCountdown, logout, refreshTokenFunc]);
+    }, [showInactivityWarning, startWarningCountdown, refreshTokenFunc]);
 
     useEffect(() => {
         const fetchInitialUser = async () => {
-            const storedUser = localStorage.getItem('user');
             const accessToken = localStorage.getItem('accessToken');
+            const storedUser = localStorage.getItem('user');
             
             if (storedUser && accessToken) {
                 try {
                     const parsedUser = JSON.parse(storedUser);
-                    // Verify if session is still valid by refreshing
+                    // Background verification
                     await refreshTokenFunc();
-                    setUser(parsedUser);
                     connectSocket(parsedUser);
-                } catch {
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
+                } catch (err) {
+                    console.error('Initial session restore failed', err);
+                    // We don't necessarily clear user here unless refreshTokenFunc already called logout
                 }
             }
             setLoading(false);
