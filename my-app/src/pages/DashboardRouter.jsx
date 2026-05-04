@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContextCore';
-import { LogOut, LayoutDashboard, FolderKanban, Flag, Database, Activity, ShieldAlert, MessageSquare } from 'lucide-react';
+import { LogOut, LayoutDashboard, FolderKanban, Flag, Database, Activity, ShieldAlert, Users, Menu, X } from 'lucide-react';
 import StudentDashboard from '../components/StudentDashboard';
 import SupervisorDashboard from '../components/SupervisorDashboard';
 import AdminDashboard from '../components/AdminDashboard';
 import ApprovedTopicsRepository from '../components/ApprovedTopicsRepository';
 import AdminStudentAssignment from '../components/AdminStudentAssignment';
-import { Users } from 'lucide-react';
 
 const DashboardRouter = () => {
     const { user, logout, socket } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (!socket) return;
@@ -39,28 +39,36 @@ const DashboardRouter = () => {
         }
     };
 
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+    const closeSidebar = () => setIsSidebarOpen(false);
+
     return (
         <div className="dashboard-container">
-            <div className="sidebar">
+            {isSidebarOpen && <div className="sidebar-overlay" onClick={closeSidebar}></div>}
+            
+            <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="brand-title">
                     <Database size={24} />
                     Scholarly
+                    <button className="menu-toggle" onClick={closeSidebar} style={{ marginLeft: 'auto', background: 'none' }}>
+                        <X size={20} />
+                    </button>
                 </div>
                 
                 <div style={{ flex: 1 }}>
-                    <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+                    <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); closeSidebar(); }}>
                         <LayoutDashboard size={18} /> {user.role === 'admin' ? 'Overview' : 'Dashboard'}
                     </div>
                     
                     {user.role === 'student' && (
                         <>
-                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => setActiveTab('repository')}><Database size={18} /> Approved Topics</div>
+                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}><Database size={18} /> Approved Topics</div>
                         </>
                     )}
                     
                     {user.role === 'supervisor' && (
                         <>
-                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => setActiveTab('repository')}><Database size={18} /> Approved Topics</div>
+                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}><Database size={18} /> Approved Topics</div>
                         </>
                     )}
 
@@ -68,18 +76,16 @@ const DashboardRouter = () => {
                         <>
                             <div className="nav-item"><FolderKanban size={18} /> Student Progress</div>
                             <div className="nav-item"><Flag size={18} /> Milestones</div>
-                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => setActiveTab('repository')}><Database size={18} /> Approved Topics</div>
+                            <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}><Database size={18} /> Approved Topics</div>
                             <div className="nav-item"><Activity size={18} /> Analytics</div>
                             <div className="nav-item" style={{ marginTop: '1rem', color: 'var(--accent-color)', fontWeight: 600 }}>
                                 <ShieldAlert size={18} /> Admin Panel
                             </div>
-                            <div className={`nav-item ${activeTab === 'assignment' ? 'active' : ''}`} onClick={() => setActiveTab('assignment')} style={{ paddingLeft: '2rem' }}>
+                            <div className={`nav-item ${activeTab === 'assignment' ? 'active' : ''}`} onClick={() => { setActiveTab('assignment'); closeSidebar(); }} style={{ paddingLeft: '2rem' }}>
                                 <Users size={16} /> Bulk Assignment
                             </div>
                         </>
                     )}
-                    
-                    {/* Messages removed as part of project simplification */}
                 </div>
 
                 <div className="nav-item" onClick={logout} style={{ color: 'var(--danger)', marginTop: 'auto' }}>
@@ -89,8 +95,11 @@ const DashboardRouter = () => {
             
             <div className="main-content">
                 <div className="top-bar">
-                    <div>
-                        <h1 className="page-title" style={{ display: 'none' }}>Dashboard</h1> {/* Handled in components */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button className="menu-toggle" onClick={toggleSidebar} style={{ display: 'none' }}>
+                            <Menu size={24} />
+                        </button>
+                        <h1 className="page-title" style={{ display: 'none' }}>Dashboard</h1> 
                     </div>
                     
                     <div className="user-controls">

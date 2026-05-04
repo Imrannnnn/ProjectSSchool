@@ -4,8 +4,8 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import { AuthContext } from './AuthContextCore';
 
-// Configure axios globally to send credentials (cookies)
-axios.defaults.withCredentials = true;
+// Configure axios globally 
+// Removed axios.defaults.withCredentials = true as we are using headers now
 
 const INACTIVITY_LIMIT = 25 * 60 * 1000; // 25 mins of local inactivity (leads to warning)
 const WARNING_LIMIT = 5 * 60 * 1000; // 5 mins of warning before logout
@@ -22,9 +22,14 @@ export const AuthProvider = ({ children }) => {
 
     const logout = useCallback(async () => {
         try {
-            await axios.post(API_BASE_URL + '/api/auth/logout');
+            const refreshToken = localStorage.getItem('refreshToken');
+            await axios.post(API_BASE_URL + '/api/auth/logout', { refreshToken });
+            
             setUser(null);
             localStorage.removeItem('user'); 
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
@@ -32,6 +37,11 @@ export const AuthProvider = ({ children }) => {
             setShowInactivityWarning(false);
         } catch (err) {
             console.error('Logout failed', err);
+            // Even if request fails, clear local state
+            setUser(null);
+            localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
         }
     }, [socket]);
 
@@ -57,13 +67,32 @@ export const AuthProvider = ({ children }) => {
         }, 1000);
     }, [logout]);
 
+    const refreshTokenFunc = useCallback(async () => {
+        try {
+            const currentRefreshToken = localStorage.getItem('refreshToken');
+            if (!currentRefreshToken) throw new Error('No refresh token');
+
+            const res = await axios.post(API_BASE_URL + '/api/auth/refresh-token', { 
+                refreshToken: currentRefreshToken 
+            });
+            
+            const { accessToken, refreshToken } = res.data;
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            return accessToken;
+        } catch (err) {
+            logout();
+            throw err;
+        }
+    }, [logout]);
+
     const resetInactivityTimer = useCallback(() => {
         if (showInactivityWarning) {
             setShowInactivityWarning(false);
             setTimeLeft(300);
             if (warningInterval.current) clearInterval(warningInterval.current);
             // Ping server to reset server-side idle timer
-            axios.post(API_BASE_URL + '/api/auth/refresh-token').catch(() => logout());
+            refreshTokenFunc().catch(() => logout());
         }
         
         if (activityTimeout.current) clearTimeout(activityTimeout.current);
@@ -72,28 +101,30 @@ export const AuthProvider = ({ children }) => {
             setShowInactivityWarning(true);
             startWarningCountdown();
         }, INACTIVITY_LIMIT);
-    }, [showInactivityWarning, startWarningCountdown, logout]);
-
-
+    }, [showInactivityWarning, startWarningCountdown, logout, refreshTokenFunc]);
 
     useEffect(() => {
         const fetchInitialUser = async () => {
             const storedUser = localStorage.getItem('user');
-            if (storedUser) {
+            const accessToken = localStorage.getItem('accessToken');
+            
+            if (storedUser && accessToken) {
                 try {
                     const parsedUser = JSON.parse(storedUser);
-                    // Verify if session is still valid
-                    await axios.post(API_BASE_URL + '/api/auth/refresh-token');
+                    // Verify if session is still valid by refreshing
+                    await refreshTokenFunc();
                     setUser(parsedUser);
                     connectSocket(parsedUser);
                 } catch {
                     localStorage.removeItem('user');
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
                 }
             }
             setLoading(false);
         };
         fetchInitialUser();
-    }, [connectSocket]);
+    }, [connectSocket, refreshTokenFunc]);
 
     useEffect(() => {
         if (user) {
@@ -102,8 +133,6 @@ export const AuthProvider = ({ children }) => {
             window.addEventListener('scroll', resetInactivityTimer);
             window.addEventListener('click', resetInactivityTimer);
             
-            // Set initial timer instead of calling it synchronously if possible, 
-            // or just ensure it's handled.
             const timeout = setTimeout(() => resetInactivityTimer(), 0);
             return () => {
                 clearTimeout(timeout);
@@ -117,15 +146,18 @@ export const AuthProvider = ({ children }) => {
         }
     }, [user, resetInactivityTimer]);
 
-
-
     const login = async (identifier, password) => {
         try {
             const res = await axios.post(API_BASE_URL + '/api/auth/login', { identifier, password });
-            setUser(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data));
-            connectSocket(res.data);
-            return res.data;
+            const { accessToken, refreshToken, ...userData } = res.data;
+            
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            
+            connectSocket(userData);
+            return userData;
         } catch (error) {
             throw error.response?.data?.message || 'Login failed';
         }
@@ -134,25 +166,46 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         try {
             const res = await axios.post(API_BASE_URL + '/api/auth/register', userData);
-            setUser(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data));
-            connectSocket(res.data);
-            return res.data;
+            const { accessToken, refreshToken, ...data } = res.data;
+            
+            setUser(data);
+            localStorage.setItem('user', JSON.stringify(data));
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            
+            connectSocket(data);
+            return data;
         } catch (error) {
             throw error.response?.data?.message || 'Registration failed';
         }
     };
 
-    // Axios interceptor for handling token expiration
+    // Axios interceptors for handling tokens
     useEffect(() => {
-        const interceptor = axios.interceptors.response.use(
+        const reqInterceptor = axios.interceptors.request.use(
+            config => {
+                const token = localStorage.getItem('accessToken');
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+                if (refreshToken) {
+                    config.headers['x-refresh-token'] = refreshToken;
+                }
+                return config;
+            },
+            error => Promise.reject(error)
+        );
+
+        const resInterceptor = axios.interceptors.response.use(
             response => response,
             async error => {
                 const originalRequest = error.config;
-                if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/refresh-token')) {
+                if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/refresh-token') && !originalRequest.url.includes('/login')) {
                     originalRequest._retry = true;
                     try {
-                        await axios.post(API_BASE_URL + '/api/auth/refresh-token');
+                        const newToken = await refreshTokenFunc();
+                        originalRequest.headers.Authorization = `Bearer ${newToken}`;
                         return axios(originalRequest);
                     } catch {
                         logout();
@@ -161,8 +214,11 @@ export const AuthProvider = ({ children }) => {
                 return Promise.reject(error);
             }
         );
-        return () => axios.interceptors.response.eject(interceptor);
-    }, [logout]);
+        return () => {
+            axios.interceptors.request.eject(reqInterceptor);
+            axios.interceptors.response.eject(resInterceptor);
+        };
+    }, [logout, refreshTokenFunc]);
 
     return (
         <AuthContext.Provider value={{ user, login, register, logout, loading, socket }}>

@@ -8,21 +8,25 @@ const SupervisorLogin = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
         try {
             const user = await login(identifier, password);
             if (user.role !== 'supervisor') {
                 setError('This portal is for Supervisors ONLY. Students and Admins should use their respective portals.');
+                setLoading(false);
                 return;
             }
             navigate('/dashboard');
         } catch (err) {
             setError(err);
+            setLoading(false);
         }
     };
 
@@ -30,7 +34,7 @@ const SupervisorLogin = () => {
         <div className="auth-container" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div className="card auth-card" style={{ maxWidth: '450px', borderTop: '4px solid #3b82f6' }}>
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '2rem', textDecoration: 'none' }}>
-                    <ArrowLeft size={16} /> Back to Gateway
+                    <ArrowLeft size={16} /> Back to Home
                 </Link>
 
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
@@ -68,6 +72,8 @@ const SupervisorLogin = () => {
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
                             required
+                            autoComplete="username"
+                            disabled={loading}
                             style={{ marginBottom: 0 }}
                         />
                     </div>
@@ -82,11 +88,14 @@ const SupervisorLogin = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="current-password"
+                                disabled={loading}
                                 style={{ marginBottom: 0, paddingRight: '2.5rem' }}
                             />
                             <button 
                                 type="button" 
                                 onClick={() => setShowPassword(!showPassword)}
+                                disabled={loading}
                                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -94,8 +103,18 @@ const SupervisorLogin = () => {
                         </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontWeight: 600, fontSize: '1rem', background: '#3b82f6' }}>
-                        Secure Login
+                    <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', padding: '0.75rem', fontWeight: 600, fontSize: '1rem', background: '#3b82f6', opacity: loading ? 0.7 : 1 }}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <span className="spinner"></span>
+                                Securing Session...
+                            </>
+                        ) : 'Secure Login'}
                     </button>
                 </form>
 

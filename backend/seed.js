@@ -18,7 +18,7 @@ const seedData = async () => {
     try {
         await connectDB();
 
-        const adminPassword = 'password123';
+        const adminPassword = process.env.ADMIN_PASSWORD;
 
         const existingAdmin = await User.findOne({ identifier: 'admin' });
 

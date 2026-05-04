@@ -8,21 +8,25 @@ const AdminLogin = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
         try {
             const user = await login(identifier, password);
             if (user.role !== 'admin') {
                 setError('Access Denied. This portal is for Super Administrators only.');
+                setLoading(false);
                 return;
             }
             navigate('/dashboard');
         } catch (err) {
             setError(err);
+            setLoading(false);
         }
     };
 
@@ -30,7 +34,7 @@ const AdminLogin = () => {
         <div className="auth-container" style={{ background: '#020617' }}>
             <div className="card auth-card" style={{ maxWidth: '450px', borderTop: '4px solid #ef4444', background: '#0f172a', color: 'white' }}>
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.875rem', marginBottom: '2rem', textDecoration: 'none' }}>
-                    <ArrowLeft size={16} /> Exit Secure Area
+                    <ArrowLeft size={16} /> Back to Home
                 </Link>
 
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
@@ -68,6 +72,8 @@ const AdminLogin = () => {
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
                             required
+                            autoComplete="username"
+                            disabled={loading}
                             style={{ background: '#1e293b', border: '1px solid #334155', color: 'white', marginBottom: 0 }}
                         />
                     </div>
@@ -82,11 +88,14 @@ const AdminLogin = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="current-password"
+                                disabled={loading}
                                 style={{ background: '#1e293b', border: '1px solid #334155', color: 'white', marginBottom: 0, paddingRight: '2.5rem' }}
                             />
                             <button 
                                 type="button" 
                                 onClick={() => setShowPassword(!showPassword)}
+                                disabled={loading}
                                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -94,8 +103,22 @@ const AdminLogin = () => {
                         </div>
                     </div>
 
-                    <button type="submit" className="btn" style={{ width: '100%', padding: '0.875rem', fontWeight: 700, fontSize: '1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                        <Terminal size={18} /> Authenticate Admin
+                    <button 
+                        type="submit" 
+                        className="btn" 
+                        disabled={loading}
+                        style={{ width: '100%', padding: '0.875rem', fontWeight: 700, fontSize: '1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: loading ? 0.7 : 1 }}
+                    >
+                        {loading ? (
+                            <>
+                                <span className="spinner"></span>
+                                Authenticating...
+                            </>
+                        ) : (
+                            <>
+                                <Terminal size={18} /> Authenticate Admin
+                            </>
+                        )}
                     </button>
                 </form>
 

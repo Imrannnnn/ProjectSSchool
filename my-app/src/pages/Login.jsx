@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContextCore';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
     const [prefix, setPrefix] = useState('HND II/swd/');
@@ -9,27 +9,35 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
         try {
             const user = await login(prefix + identifierNum, password);
             if (user.role !== 'student') {
                 setError('Staff should use the dedicated Supervisor Portal.');
+                setLoading(false);
                 return;
             }
             navigate('/dashboard');
         } catch (err) {
             setError(err);
+            setLoading(false);
         }
     };
 
     return (
         <div className="auth-container" style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #f1f5f9 100%)' }}>
             <div className="card auth-card" style={{ maxWidth: '450px', borderTop: '4px solid var(--accent-color)' }}>
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', textDecoration: 'none' }}>
+                    <ArrowLeft size={16} /> Back to Home
+                </Link>
+
                 <div style={{ textAlign: 'center', marginBottom: '1rem', color: 'var(--accent-color)' }}>
                     <div style={{ width: 64, height: 64, background: '#eff6ff', color: 'var(--accent-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
                         <BookOpen size={32} />
@@ -48,6 +56,7 @@ const Login = () => {
                                 style={{ flex: '1', marginBottom: 0, paddingLeft: '0.5rem', minWidth: '150px' }}
                                 value={prefix}
                                 onChange={(e) => setPrefix(e.target.value)}
+                                disabled={loading}
                             >
                                 <option value="HND II/swd/">HND II/swd/</option>
                                 <option value="HND II/NCC/">HND II/NCC/</option>
@@ -60,6 +69,7 @@ const Login = () => {
                                 value={identifierNum}
                                 onChange={(e) => setIdentifierNum(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
                     </div>
@@ -74,18 +84,31 @@ const Login = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="current-password"
+                                disabled={loading}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
                                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                                disabled={loading}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem', fontSize: '1rem' }}>
-                        Sign In to Dashboard
+                    <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem', fontSize: '1rem', opacity: loading ? 0.7 : 1 }}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <span className="spinner"></span>
+                                Signing in...
+                            </>
+                        ) : 'Sign In to Dashboard'}
                     </button>
                 </form>
                 <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>

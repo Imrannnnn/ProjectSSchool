@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContextCore';
-import { BookOpen, GraduationCap, ArrowRight } from 'lucide-react';
+import { BookOpen, GraduationCap, ArrowRight, ArrowLeft } from 'lucide-react';
 import './Home.css';
 
 const Home = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     return (
         <div className="home-container">
@@ -25,6 +25,26 @@ const Home = () => {
             <div className="home-right">
                 {user ? (
                     <div className="home-right-content">
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <button 
+                                onClick={logout}
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '0.5rem', 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    color: 'var(--text-secondary)', 
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    fontSize: '0.875rem',
+                                    fontWeight: 500
+                                }}
+                            >
+                                <ArrowLeft size={16} /> Not you? Switch Account
+                            </button>
+                        </div>
+
                         <div className="brand-badge" style={{ backgroundColor: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}>
                             <BookOpen size={20} />
                             <span>Session Active</span>

@@ -5,26 +5,11 @@ const jwt = require('jsonwebtoken');
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 mins
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 const MAX_IDLE_TIME = 30 * 60 * 1000; // 30 mins idle
-const COOKIE_NAME_ACCESS = 'fpn_access_token';
-const COOKIE_NAME_REFRESH = 'fpn_refresh_token';
 
 const generateTokens = (id) => {
     const accessToken = jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: ACCESS_TOKEN_EXPIRY });
     const refreshToken = jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || 'refresh_secret_key', { expiresIn: REFRESH_TOKEN_EXPIRY });
     return { accessToken, refreshToken };
-};
-
-const setCookies = (res, accessToken, refreshToken) => {
-    // Hardcoded for Netlify -> Render cross-domain deployment
-    const cookieOptions = {
-        httpOnly: true,
-        secure: true, 
-        sameSite: 'none',
-        path: '/'
-    };
-
-    res.cookie(COOKIE_NAME_ACCESS, accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
-    res.cookie(COOKIE_NAME_REFRESH, refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
 };
 
 const registerUser = async (req, res) => {
@@ -48,14 +33,14 @@ const registerUser = async (req, res) => {
                 ipAddress: req.ip
             });
 
-            setCookies(res, accessToken, refreshToken);
-
             res.status(201).json({
                 _id: user._id,
                 identifier: user.identifier,
                 name: user.name,
                 role: user.role,
-                supervisor: user.supervisor
+                supervisor: user.supervisor,
+                accessToken,
+                refreshToken
             });
         }
     } catch (error) {
@@ -72,7 +57,6 @@ const loginUser = async (req, res) => {
         if (user && (await user.matchPassword(password))) {
             const { accessToken, refreshToken } = generateTokens(user._id);
             
-            // Allow multiple sessions but we could also invalidate old ones here for rotation
             await Session.create({
                 userId: user._id, 
                 refreshToken, 
@@ -80,14 +64,14 @@ const loginUser = async (req, res) => {
                 ipAddress: req.ip
             });
 
-            setCookies(res, accessToken, refreshToken);
-
             res.json({
                 _id: user._id,
                 identifier: user.identifier,
                 name: user.name,
                 role: user.role,
-                supervisor: user.supervisor
+                supervisor: user.supervisor,
+                accessToken,
+                refreshToken
             });
         } else {
             res.status(401).json({ message: 'Invalid identifier or password' });
@@ -99,12 +83,10 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
     try {
-        const refreshToken = req.cookies[COOKIE_NAME_REFRESH];
+        const refreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
         if (refreshToken) {
             await Session.deleteOne({ refreshToken });
         }
-        res.clearCookie(COOKIE_NAME_ACCESS);
-        res.clearCookie(COOKIE_NAME_REFRESH);
         res.json({ message: 'Logged out successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -112,14 +94,14 @@ const logoutUser = async (req, res) => {
 };
 
 const refreshToken = async (req, res) => {
-    const refreshToken = req.cookies[COOKIE_NAME_REFRESH];
-    if (!refreshToken) return res.status(401).json({ message: 'No refresh token' });
+    const oldRefreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
+    if (!oldRefreshToken) return res.status(401).json({ message: 'No refresh token' });
 
     try {
-        const session = await Session.findOne({ refreshToken, isValid: true });
+        const session = await Session.findOne({ refreshToken: oldRefreshToken, isValid: true });
         if (!session) return res.status(401).json({ message: 'Invalid session' });
 
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'refresh_secret_key');
+        const decoded = jwt.verify(oldRefreshToken, process.env.JWT_REFRESH_SECRET || 'refresh_secret_key');
         
         // Idle timeout verification
         if (Date.now() - session.lastActivity.getTime() > MAX_IDLE_TIME) {
@@ -134,8 +116,7 @@ const refreshToken = async (req, res) => {
         session.lastActivity = Date.now();
         await session.save();
 
-        setCookies(res, accessToken, newRefreshToken);
-        res.json({ message: 'Token refreshed' });
+        res.json({ accessToken, refreshToken: newRefreshToken });
     } catch (error) {
         res.status(401).json({ message: 'Refresh token failed' });
     }

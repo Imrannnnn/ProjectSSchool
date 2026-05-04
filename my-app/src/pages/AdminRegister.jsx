@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContextCore';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldAlert, Eye, EyeOff } from 'lucide-react';
+import { ShieldAlert, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 const AdminRegister = () => {
     const [identifier, setIdentifier] = useState('');
@@ -10,16 +10,19 @@ const AdminRegister = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [adminKey, setAdminKey] = useState(''); // Secret key check
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
     const { register } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
         
         // Simple client-side secret check for demo
         if (adminKey !== 'admin123') {
             setError('Invalid Administrator Security Key');
+            setLoading(false);
             return;
         }
 
@@ -33,12 +36,17 @@ const AdminRegister = () => {
             navigate('/dashboard');
         } catch (err) {
             setError(err);
+            setLoading(false);
         }
     };
 
     return (
         <div className="auth-container">
             <div className="card auth-card" style={{ borderColor: 'var(--danger)' }}>
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', textDecoration: 'none' }}>
+                    <ArrowLeft size={16} /> Back to Home
+                </Link>
+
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: 'var(--danger)' }}>
                     <ShieldAlert size={64} />
                 </div>
@@ -54,6 +62,7 @@ const AdminRegister = () => {
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
                         required
+                        disabled={loading}
                     />
                     <input 
                         type="text" 
@@ -62,6 +71,7 @@ const AdminRegister = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        disabled={loading}
                     />
                     <div style={{ position: 'relative' }}>
                         <input 
@@ -72,10 +82,12 @@ const AdminRegister = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            disabled={loading}
                         />
                         <button 
                             type="button" 
                             onClick={() => setShowPassword(!showPassword)}
+                            disabled={loading}
                             style={{ position: 'absolute', right: '0.75rem', top: '40%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                         >
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -91,10 +103,21 @@ const AdminRegister = () => {
                             value={adminKey}
                             onChange={(e) => setAdminKey(e.target.value)}
                             required
+                            disabled={loading}
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', background: 'var(--danger)', border: 'none' }}>
-                        Create Administrator Account
+                    <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', marginTop: '1rem', background: 'var(--danger)', border: 'none', opacity: loading ? 0.7 : 1 }}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <span className="spinner"></span>
+                                Creating Admin Account...
+                            </>
+                        ) : 'Create Administrator Account'}
                     </button>
                 </form>
                 <div style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)' }}>

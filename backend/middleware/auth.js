@@ -5,7 +5,17 @@ const Session = require('../models/Session');
 const MAX_IDLE_TIME = 30 * 60 * 1000; // 30 mins
 
 const protect = async (req, res, next) => {
-    let accessToken = req.cookies.fpn_access_token;
+    let accessToken;
+    let refreshToken;
+
+    // Check Authorization header
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        accessToken = req.headers.authorization.split(' ')[1];
+    }
+    
+    // Check custom refresh header for session tracking
+    refreshToken = req.headers['x-refresh-token'];
+
     console.log(`[AUTH] Accessing protected route: ${req.url}. Access Token: ${accessToken ? 'PRESENT' : 'MISSING'}`);
 
     if (!accessToken) {
@@ -16,14 +26,16 @@ const protect = async (req, res, next) => {
         const decoded = jwt.verify(accessToken, process.env.JWT_SECRET || 'fallback_secret');
         
         // Find session for this user to track activity
+        // If we don't have a refresh token header, we might still allow the request 
+        // but session tracking (idle timeout) will be limited or we can skip it.
         const session = await Session.findOne({ 
             userId: decoded.id, 
-            refreshToken: req.cookies.fpn_refresh_token, 
+            refreshToken: refreshToken || { $exists: true }, 
             isValid: true 
         });
 
         if (!session) {
-            return res.status(401).json({ message: 'Session invalid' });
+            return res.status(401).json({ message: 'Session invalid or expired' });
         }
 
         // Idle Timeout Tracking
@@ -31,8 +43,6 @@ const protect = async (req, res, next) => {
         const lastActivity = session.lastActivity.getTime();
         if (now - lastActivity > MAX_IDLE_TIME) {
             await session.deleteOne();
-            res.clearCookie('fpn_access_token');
-            res.clearCookie('fpn_refresh_token');
             return res.status(401).json({ message: 'Session expired due to inactivity' });
         }
 
