@@ -15,11 +15,11 @@ const generateTokens = (id) => {
 };
 
 const setCookies = (res, accessToken, refreshToken) => {
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.FRONTEND_URL;
+    // Hardcoded for Netlify -> Render cross-domain deployment
     const cookieOptions = {
         httpOnly: true,
-        secure: isProduction, 
-        sameSite: isProduction ? 'none' : 'lax',
+        secure: true, 
+        sameSite: 'none',
         path: '/'
     };
 
