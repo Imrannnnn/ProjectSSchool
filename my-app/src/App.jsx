@@ -13,7 +13,7 @@ import DashboardRouter from './pages/DashboardRouter';
 
 const ProtectedRoute = ({ children }) => {
     const { user } = useAuth();
-    if (!user) return <Navigate to="/login" replace />;
+    if (!user) return <Navigate to="/" replace />;
     return children;
 };
 
