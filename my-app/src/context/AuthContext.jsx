@@ -37,13 +37,13 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('user'); 
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
-            }
+            setSocket(prev => {
+                if (prev) prev.disconnect();
+                return null;
+            });
             setShowInactivityWarning(false);
         }
-    }, [socket]);
+    }, []);
 
     const connectSocket = useCallback((u) => {
         if (!u?._id) return;
@@ -68,26 +68,38 @@ export const AuthProvider = ({ children }) => {
         }, 1000);
     }, [logout]);
 
-    const refreshTokenFunc = useCallback(async () => {
-        try {
-            const currentRefreshToken = localStorage.getItem('refreshToken');
-            if (!currentRefreshToken) throw new Error('No refresh token');
+    const refreshPromise = useRef(null);
 
-            const res = await axios.post(API_BASE_URL + '/api/auth/refresh-token', { 
-                refreshToken: currentRefreshToken 
-            });
-            
-            const { accessToken, refreshToken } = res.data;
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
-            return accessToken;
-        } catch (err) {
-            // Only force logout if it's a 401/403 (Invalid token)
-            if (err.response?.status === 401 || err.response?.status === 403) {
-                logout(true);
-            }
-            throw err;
+    const refreshTokenFunc = useCallback(async () => {
+        if (refreshPromise.current) {
+            return refreshPromise.current;
         }
+
+        refreshPromise.current = (async () => {
+            try {
+                const currentRefreshToken = localStorage.getItem('refreshToken');
+                if (!currentRefreshToken) throw new Error('No refresh token');
+
+                const res = await axios.post(API_BASE_URL + '/api/auth/refresh-token', { 
+                    refreshToken: currentRefreshToken 
+                });
+                
+                const { accessToken, refreshToken } = res.data;
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('refreshToken', refreshToken);
+                return accessToken;
+            } catch (err) {
+                // Only force logout if it's a 401/403 (Invalid token)
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    logout(true);
+                }
+                throw err;
+            } finally {
+                refreshPromise.current = null;
+            }
+        })();
+
+        return refreshPromise.current;
     }, [logout]);
 
     const resetInactivityTimer = useCallback(() => {
@@ -108,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     }, [showInactivityWarning, startWarningCountdown, refreshTokenFunc]);
 
     useEffect(() => {
+        let isMounted = true;
         const fetchInitialUser = async () => {
             const refreshToken = localStorage.getItem('refreshToken');
             const storedUser = localStorage.getItem('user');
@@ -117,21 +130,22 @@ export const AuthProvider = ({ children }) => {
                     const parsedUser = JSON.parse(storedUser);
                     // On app load → ALWAYS try refresh
                     await refreshTokenFunc();
-                    connectSocket(parsedUser);
+                    if (isMounted) connectSocket(parsedUser);
                 } catch (err) {
                     console.error('Initial session restore failed', err);
                     // If refresh fails, we should logout
-                    logout(true);
+                    if (isMounted) logout(true);
                 }
             } else {
                 if (storedUser || localStorage.getItem('accessToken')) {
-                    logout(true);
+                    if (isMounted) logout(true);
                 }
             }
-            setLoading(false);
+            if (isMounted) setLoading(false);
         };
         fetchInitialUser();
-    }, [connectSocket, refreshTokenFunc, logout]);
+        return () => { isMounted = false; };
+    }, []); // Run only once on mount
 
     useEffect(() => {
         if (user) {

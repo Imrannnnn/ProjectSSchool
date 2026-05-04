@@ -47,8 +47,7 @@ const protect = async (req, res, next) => {
         }
 
         // Update server-side activity
-        session.lastActivity = now;
-        await session.save();
+        await Session.updateOne({ _id: session._id }, { lastActivity: now });
 
         req.user = await User.findById(decoded.id).select('-password');
         if (!req.user) {
