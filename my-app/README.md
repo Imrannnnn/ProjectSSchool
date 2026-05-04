@@ -77,11 +77,6 @@ This system enables seamless interaction between **Students**, **Project Supervi
 ### How to Create an Admin Account
 There are two ways to create a Project Committee (Admin) account:
 
-1.  **Seeding (Recommended for first run):**
-    Run `node seed.js` in the backend directory. This creates a default admin with:
-    - **Identifier:** `admin`
-    - **Password:** `password`
-
 2.  **Secret Registration Route:**
     Navigate to the hidden registration link while the app is running:
     `http://localhost:5173/admin/secret-register`

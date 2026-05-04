@@ -37,7 +37,7 @@ cd ProjectSchool
    PORT=6001
    MONGO_URI=mongodb://localhost:27017/projectschool
    JWT_SECRET=your_super_secret_key
-   FRONTEND_URL=http://localhost:5173
+   FRONTEND_URL=https://projectproposalcss.netlify.app
    ```
 4. Start the server: `npm run dev`
 
@@ -46,18 +46,25 @@ cd ProjectSchool
 2. Install dependencies: `npm install`
 3. Create a `.env` file (Vite requires `VITE_` prefix):
    ```env
-   VITE_API_URL=http://localhost:6001
+   VITE_API_URL=https://projectsschool.onrender.com
    ```
 4. Start the app: `npm run dev`
 
-## 🌐 Deployment on Render
+## 🌐 Deployment
 
+### Frontend (Netlify)
+1. Push your code to GitHub.
+2. Connect the `my-app` folder to Netlify.
+3. **Build Command**: `npm run build`
+4. **Publish Directory**: `dist`
+5. **Environment Variables**: Add `VITE_API_URL` pointing to your Render backend URL.
+
+### Backend (Render)
 This project is pre-configured for Render using the `render.yaml` Blueprint.
-
 1. Push your code to GitHub.
 2. Go to [Render](https://render.com) and click **New +** -> **Blueprint**.
 3. Connect your repository.
-4. Provide the environment variables requested (`MONGO_URI`, `JWT_SECRET`, etc.).
+4. Provide the environment variables: `MONGO_URI`, `JWT_SECRET`, and `FRONTEND_URL=https://projectproposalcss.netlify.app`.
 
 ## 📁 Project Structure
 

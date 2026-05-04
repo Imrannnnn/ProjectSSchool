@@ -1,5 +1,5 @@
 services:
-  # Backend Web Service
+  # Backend Web Service (Render)
   - type: web
     name: projectschool-backend
     env: node
@@ -16,15 +16,4 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
-        sync: false
-
-  # Frontend Static Site
-  - type: static
-    name: projectschool-frontend
-    env: static
-    rootDir: my-app
-    buildCommand: npm install && npm run build
-    publishDir: dist
-    envVars:
-      - key: VITE_API_URL
         sync: false
