@@ -15,10 +15,11 @@ const generateTokens = (id) => {
 };
 
 const setCookies = (res, accessToken, refreshToken) => {
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.FRONTEND_URL;
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProduction, 
+        sameSite: isProduction ? 'none' : 'lax',
         path: '/'
     };
 
