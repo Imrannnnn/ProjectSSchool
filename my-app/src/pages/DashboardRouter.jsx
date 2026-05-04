@@ -55,7 +55,7 @@ const DashboardRouter = () => {
                     </button>
                 </div>
                 
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); closeSidebar(); }}>
                         <LayoutDashboard size={18} /> {user.role === 'admin' ? 'Overview' : 'Dashboard'}
                     </div>
@@ -88,7 +88,7 @@ const DashboardRouter = () => {
                     )}
                 </div>
 
-                <div className="nav-item" onClick={logout} style={{ color: 'var(--danger)', marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <div className="nav-item" onClick={logout} style={{ color: 'var(--danger)', marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', fontWeight: 600 }}>
                     <LogOut size={18} /> Logout
                 </div>
             </div>

@@ -109,24 +109,29 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const fetchInitialUser = async () => {
-            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
             const storedUser = localStorage.getItem('user');
             
-            if (storedUser && accessToken) {
+            if (storedUser && refreshToken) {
                 try {
                     const parsedUser = JSON.parse(storedUser);
-                    // Background verification
+                    // On app load → ALWAYS try refresh
                     await refreshTokenFunc();
                     connectSocket(parsedUser);
                 } catch (err) {
                     console.error('Initial session restore failed', err);
-                    // We don't necessarily clear user here unless refreshTokenFunc already called logout
+                    // If refresh fails, we should logout
+                    logout(true);
+                }
+            } else {
+                if (storedUser || localStorage.getItem('accessToken')) {
+                    logout(true);
                 }
             }
             setLoading(false);
         };
         fetchInitialUser();
-    }, [connectSocket, refreshTokenFunc]);
+    }, [connectSocket, refreshTokenFunc, logout]);
 
     useEffect(() => {
         if (user) {
