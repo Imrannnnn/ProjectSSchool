@@ -2,7 +2,7 @@ import API_BASE_URL from '../apiConfig';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContextCore';
 import axios from 'axios';
-import { CheckCircle2, User, Inbox, RotateCcw } from 'lucide-react';
+import { CheckCircle2, User, Inbox, RotateCcw, Activity } from 'lucide-react';
 
 const StudentDashboard = () => {
     const { user, socket } = useAuth();
