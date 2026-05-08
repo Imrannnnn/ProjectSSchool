@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Session = require('../models/Session');
+const RangeAssignment = require('../models/RangeAssignment');
+const { isIdentifierInRange } = require('../utils/rangeHelper');
 const jwt = require('jsonwebtoken');
 
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 mins
@@ -20,7 +22,19 @@ const registerUser = async (req, res) => {
         if (userExists) return res.status(400).json({ message: 'User already exists' });
 
         const userObj = { role, identifier, name, password };
-        if (role === 'student' && supervisorId) userObj.supervisor = supervisorId;
+        
+        // Automatic Assignment Logic
+        if (role === 'student' && !supervisorId) {
+            const ranges = await RangeAssignment.find({});
+            for (const range of ranges) {
+                if (isIdentifierInRange(identifier, range)) {
+                    userObj.supervisor = range.supervisor;
+                    break;
+                }
+            }
+        } else if (role === 'student' && supervisorId) {
+            userObj.supervisor = supervisorId;
+        }
 
         const user = await User.create(userObj);
         if (user) {

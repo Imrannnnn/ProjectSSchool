@@ -10,6 +10,8 @@ import AdminRegister from './pages/AdminRegister';
 import SupervisorLogin from './pages/SupervisorLogin';
 import AdminLogin from './pages/AdminLogin';
 import DashboardRouter from './pages/DashboardRouter';
+import StaffPortal from './pages/StaffPortal';
+import AdminPortal from './pages/AdminPortal';
 
 const ProtectedRoute = ({ children }) => {
     const { user } = useAuth();
@@ -27,6 +29,8 @@ function App() {
                     <Route path="/lecturer/login" element={<SupervisorLogin />} />
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/staff" element={<StaffPortal />} />
+                    <Route path="/admin" element={<AdminPortal />} />
                     <Route path="/register/supervisor" element={<SupervisorRegister />} />
                     <Route path="/admin/secret-register" element={<AdminRegister />} />
                     <Route path="/*" element={

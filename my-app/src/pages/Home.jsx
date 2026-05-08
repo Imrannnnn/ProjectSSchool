@@ -16,25 +16,25 @@ const Home = () => {
                         <GraduationCap size={64} color="white" />
                     </div>
                     <h1 className="fpn-acronym">CSS</h1>
-                    <h2 className="fpn-fullname">Computer science student</h2>
+                    <h2 className="fpn-fullname">Computer science students</h2>
                     <div className="fpn-divider"></div>
                     <p className="fpn-subtitle">Excellence in Technology and Innovation</p>
                 </div>
             </div>
-            
+
             <div className="home-right">
                 {user ? (
                     <div className="home-right-content">
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <button 
+                            <button
                                 onClick={logout}
-                                style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '0.5rem', 
-                                    background: 'none', 
-                                    border: 'none', 
-                                    color: 'var(--text-secondary)', 
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
                                     cursor: 'pointer',
                                     padding: 0,
                                     fontSize: '0.875rem',
@@ -49,13 +49,13 @@ const Home = () => {
                             <BookOpen size={20} />
                             <span>Session Active</span>
                         </div>
-                        
+
                         <h1 className="home-title">Welcome back, {user.name.split(' ')[0]}!</h1>
-                        
+
                         <p className="home-description">
                             You are successfully authenticated as a <strong style={{ textTransform: 'capitalize' }}>{user.role}</strong> on the Computer science student project portal. Jump right back into your dashboard to continue tracking progress and reviewing milestones.
                         </p>
-                        
+
                         <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#eff6ff', color: '#0f62fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem' }}>
@@ -80,13 +80,13 @@ const Home = () => {
                             <BookOpen size={20} />
                             <span>Scholarly Project System</span>
                         </div>
-                        
+
                         <h1 className="home-title">Student Project Management Platform</h1>
-                        
+
                         <p className="home-description">
                             Streamline your academic journey with our unified centralized platform. Specifically engineered for Computer science student, Scholarly connects students, supervisors, and administrators to seamlessly propose, track, and review final year projects.
                         </p>
-                        
+
                         <div className="home-features">
                             <div className="feature-item">
                                 <div className="feature-icon"><ArrowRight size={18} /></div>
@@ -108,29 +108,6 @@ const Home = () => {
                             </Link>
                             <Link to="/register" className="btn btn-outline btn-lg" style={{ borderColor: '#cbd5e1', flex: 1, textAlign: 'center' }}>
                                 Student Register
-                            </Link>
-                        </div>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1.5rem' }}>
-                            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Staff Portal</span>
-                            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                        </div>
-
-                        <div className="home-actions" style={{ marginBottom: '1.5rem' }}>
-                            <Link to="/lecturer/login" className="btn btn-outline" style={{ flex: 1, textAlign: 'center' }}>Supervisor Login</Link>
-                            <Link to="/register/supervisor" className="btn btn-outline" style={{ flex: 1, textAlign: 'center' }}>Supervisor Register</Link>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '2px' }}>Secure Admin Area</span>
-                            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                        </div>
-
-                        <div className="home-actions">
-                            <Link to="/admin/login" className="btn btn-primary" style={{ backgroundColor: '#020617', color: 'white', borderColor: '#ef4444', flex: 1, textAlign: 'center', fontWeight: 'bold' }}>
-                                Super Admin Login
                             </Link>
                         </div>
                     </div>

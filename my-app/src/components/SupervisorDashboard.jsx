@@ -95,13 +95,40 @@ const SupervisorDashboard = () => {
                         </div>
                     </div>
                 </div>
-                <div className="card">
-                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={18} /> Milestones</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <div style={{ background: '#eff6ff', color: 'var(--accent-color)', padding: '0.5rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>MAY 15</div>
-                            <div style={{ fontSize: '0.875rem' }}>Topic Submission Deadline</div>
-                        </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div className="flex-between" style={{ marginBottom: '1rem' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={18} /> Assigned Matric List</h3>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{students.length} TOTAL</span>
+                    </div>
+                    <div style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: '0.5rem', 
+                        maxHeight: '120px', 
+                        overflowY: 'auto', 
+                        padding: '0.5rem',
+                        background: '#f1f5f9',
+                        borderRadius: '8px'
+                    }}>
+                        {students.length > 0 ? (
+                            students.map(s => (
+                                <div key={s._id} style={{ 
+                                    fontSize: '0.75rem', 
+                                    fontWeight: 700, 
+                                    background: 'white', 
+                                    padding: '0.25rem 0.6rem', 
+                                    borderRadius: '4px', 
+                                    border: '1px solid #e2e8f0',
+                                    color: 'var(--accent-color)'
+                                }}>
+                                    {s.identifier}
+                                </div>
+                            ))
+                        ) : (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '1rem', textAlign: 'center', width: '100%' }}>
+                                No students assigned.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -110,6 +137,7 @@ const SupervisorDashboard = () => {
                 <table className="topic-table">
                     <thead>
                         <tr>
+                            <th>Matric Number</th>
                             <th>Student Name</th>
                             <th>Status</th>
                             <th>Topic</th>
@@ -119,6 +147,7 @@ const SupervisorDashboard = () => {
                     <tbody>
                         {students.map(s => (
                             <tr key={s._id} onClick={() => setSelectedStudent(s)} className={selectedStudent?._id === s._id ? 'active' : ''} style={{ cursor: 'pointer' }}>
+                                <td style={{ fontWeight: 600, color: 'var(--accent-color)' }}>{s.identifier}</td>
                                 <td>{s.name}</td>
                                 <td><span className={`badge ${s.topicStatus === 'approved' ? 'badge-approved' : 'badge-warning'}`}>{s.topicStatus.toUpperCase()}</span></td>
                                 <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -129,7 +158,7 @@ const SupervisorDashboard = () => {
                         ))}
                         {students.length === 0 && (
                             <tr>
-                                <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No students assigned yet.</td>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No students assigned yet.</td>
                             </tr>
                         )}
                     </tbody>
@@ -139,7 +168,7 @@ const SupervisorDashboard = () => {
             {selectedStudent && (
                 <div className="card" style={{ marginTop: '2rem', borderTop: '4px solid var(--accent-color)' }}>
                     <div style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ margin: 0 }}>Review Proposals: {selectedStudent.name}</h3>
+                        <h3 style={{ margin: 0 }}>Review Proposals: {selectedStudent.name} ({selectedStudent.identifier})</h3>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Review the submitted topics and provide feedback below.</p>
                     </div>
 

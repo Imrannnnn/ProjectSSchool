@@ -16,6 +16,7 @@ const AdminStudentAssignment = () => {
     const [rangeStart, setRangeStart] = useState('');
     const [rangeEnd, setRangeEnd] = useState('');
     
+    const [ranges, setRanges] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
 
@@ -28,12 +29,16 @@ const AdminStudentAssignment = () => {
                 const supRes = await axios.get(API_BASE_URL + '/api/auth/supervisors', {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
+                const rangeRes = await axios.get(API_BASE_URL + '/api/users/ranges', {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
                 
                 // Sort students alphabetically by identifier natively
                 const sortedStudents = stdRes.data.sort((a, b) => a.identifier.localeCompare(b.identifier));
                 
                 setStudents(sortedStudents);
                 setSupervisors(supRes.data);
+                setRanges(rangeRes.data);
                 
                 if (supRes.data.length > 0) {
                     setTargetSupervisor(supRes.data[0]._id);
@@ -98,6 +103,56 @@ const AdminStudentAssignment = () => {
         setSelectedStudents(newSelection);
         setMessage(`Selected ${idsToSelect.length} students in range.`);
         setTimeout(() => setMessage(''), 3000);
+    };
+
+    const handleSaveRange = async () => {
+        if (!rangeStart || !rangeEnd) {
+            setMessage('Please enter both start and end registration numbers.');
+            return;
+        }
+
+        if (!window.confirm(`Save this range? Any new students registering within this range will be automatically assigned to the selected supervisor.`)) return;
+
+        try {
+            const res = await axios.post(API_BASE_URL + '/api/users/ranges', 
+                { supervisorId: targetSupervisor, startIdentifier: rangeStart, endIdentifier: rangeEnd },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+            
+            setMessage(`Range saved! ${res.data.assignedExistingCount} existing students were also assigned.`);
+            
+            // Refresh data
+            const rangeRes = await axios.get(API_BASE_URL + '/api/users/ranges', {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setRanges(rangeRes.data);
+            
+            // Also refresh students to see new assignments
+            const stdRes = await axios.get(API_BASE_URL + '/api/users/students', {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setStudents(stdRes.data.sort((a, b) => a.identifier.localeCompare(b.identifier)));
+
+            setTimeout(() => setMessage(''), 5000);
+        } catch (error) {
+            console.error(error);
+            setMessage('Failed to save range assignment.');
+        }
+    };
+
+    const handleDeleteRange = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this range assignment? Future students will no longer be auto-assigned.')) return;
+        try {
+            await axios.delete(API_BASE_URL + `/api/users/ranges/${id}`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+            });
+            setRanges(ranges.filter(r => r._id !== id));
+            setMessage('Range assignment deleted.');
+            setTimeout(() => setMessage(''), 3000);
+        } catch (error) {
+            console.error(error);
+            setMessage('Failed to delete range.');
+        }
     };
 
     const handleAssign = async () => {
@@ -178,9 +233,14 @@ const AdminStudentAssignment = () => {
                         </div>
                     </div>
                     
-                    <button className="btn btn-outline" onClick={handleRangeSelect} style={{ width: '100%', background: 'white', marginBottom: '2rem' }}>
-                        Auto-select Range
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-outline" onClick={handleRangeSelect} style={{ flex: 1, background: 'white', marginBottom: '1.5rem', fontSize: '0.8rem' }}>
+                            Test Selection
+                        </button>
+                        <button className="btn btn-primary" onClick={handleSaveRange} style={{ flex: 1, marginBottom: '1.5rem', fontSize: '0.8rem' }}>
+                            Save as Auto-Assign
+                        </button>
+                    </div>
                     
                     <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
                         <UserCheck size={18} /> Target Supervisor
@@ -217,11 +277,40 @@ const AdminStudentAssignment = () => {
                     <button 
                         className="btn btn-primary" 
                         onClick={handleAssign} 
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', marginBottom: '1rem' }}
                         disabled={selectedStudents.length === 0}
                     >
-                        Assign Selected Students
+                        Assign Selected Now
                     </button>
+
+                    {/* ACTIVE AUTO-ASSIGN RULES */}
+                    <div style={{ marginTop: '2rem', borderTop: '2px dashed #e2e8f0', paddingTop: '1.5rem' }}>
+                        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            Active Auto-Assign Rules
+                        </h3>
+                        {ranges.length === 0 ? (
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                                No persistent ranges defined yet.
+                            </p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {ranges.map(r => (
+                                    <div key={r._id} style={{ background: 'white', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, color: 'var(--accent-color)' }}>{r.startIdentifier} - {r.endIdentifier}</div>
+                                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{r.supervisor?.name || 'Unknown'}</div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleDeleteRange(r._id)}
+                                            style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* STUDENTS TABLE */}

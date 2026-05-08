@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const RangeAssignment = require('../models/RangeAssignment');
+const { extractNumber, getPrefix } = require('../utils/rangeHelper');
 
 const getStudents = async (req, res) => {
     try {
@@ -79,4 +81,72 @@ const assignSupervisor = async (req, res) => {
     }
 }
 
-module.exports = { getStudents, assignSupervisor, getMe, getAdminStats };
+const createRangeAssignment = async (req, res) => {
+    try {
+        const { supervisorId, startIdentifier, endIdentifier } = req.body;
+        if (!supervisorId || !startIdentifier || !endIdentifier) {
+            return res.status(400).json({ message: 'Missing range data' });
+        }
+
+        const startNum = extractNumber(startIdentifier);
+        const endNum = extractNumber(endIdentifier);
+        const prefix = getPrefix(startIdentifier);
+
+        const range = await RangeAssignment.create({
+            supervisor: supervisorId,
+            startIdentifier,
+            endIdentifier,
+            prefix,
+            startNum,
+            endNum
+        });
+
+        // Also assign existing students who fall into this range and are unassigned
+        const unassignedStudents = await User.find({ role: 'student', supervisor: { $exists: false } });
+        const studentsToAssign = unassignedStudents.filter(s => {
+            const sNum = extractNumber(s.identifier);
+            const sPrefix = getPrefix(s.identifier);
+            if (prefix && sPrefix !== prefix) return false;
+            return sNum !== null && sNum >= startNum && sNum <= endNum;
+        });
+
+        if (studentsToAssign.length > 0) {
+            await User.updateMany(
+                { _id: { $in: studentsToAssign.map(s => s._id) } },
+                { $set: { supervisor: supervisorId } }
+            );
+        }
+
+        res.status(201).json({ message: 'Range assignment created', range, assignedExistingCount: studentsToAssign.length });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+const getRangeAssignments = async (req, res) => {
+    try {
+        const ranges = await RangeAssignment.find().populate('supervisor', 'name identifier');
+        res.json(ranges);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+const deleteRangeAssignment = async (req, res) => {
+    try {
+        await RangeAssignment.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Range assignment deleted' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+module.exports = { 
+    getStudents, 
+    assignSupervisor, 
+    getMe, 
+    getAdminStats, 
+    createRangeAssignment, 
+    getRangeAssignments, 
+    deleteRangeAssignment 
+};

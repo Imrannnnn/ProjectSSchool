@@ -33,8 +33,8 @@ const SupervisorLogin = () => {
     return (
         <div className="auth-container" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
             <div className="card auth-card" style={{ maxWidth: '450px', borderTop: '4px solid #3b82f6' }}>
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '2rem', textDecoration: 'none' }}>
-                    <ArrowLeft size={16} /> Back to Home
+                <Link to="/staff" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '2rem', textDecoration: 'none' }}>
+                    <ArrowLeft size={16} /> Back to Staff Portal
                 </Link>
 
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>

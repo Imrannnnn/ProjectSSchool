@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { areDuplicates } = require('../utils/topicEngine');
 
 const submitTopics = async (req, res) => {
     try {
@@ -10,6 +11,30 @@ const submitTopics = async (req, res) => {
 
         if (!proposedTopics || proposedTopics.length < 2) {
              return res.status(400).json({ message: 'You must propose at least two topics.' });
+        }
+
+        // Check for duplicates within the submission itself
+        const titles = proposedTopics.map(t => t.title);
+        const internalDuplicate = titles.some((title, index) => 
+            titles.findIndex(t => areDuplicates(t, title)) !== index
+        );
+        if (internalDuplicate) {
+            return res.status(400).json({ message: 'Duplicate topics found in your proposal.' });
+        }
+
+        // Check against already approved topics in the system
+        const approvedUsers = await User.find({ 
+            'approvedTopic.title': { $exists: true },
+            topicStatus: 'approved'
+        }).select('approvedTopic.title');
+
+        for (const topic of proposedTopics) {
+            const isTaken = approvedUsers.some(u => areDuplicates(u.approvedTopic.title, topic.title));
+            if (isTaken) {
+                return res.status(400).json({ 
+                    message: `The topic "${topic.title}" has already been approved for another student. Please choose a different topic.` 
+                });
+            }
         }
         
         const user = await User.findById(req.user._id);
@@ -57,6 +82,18 @@ const reviewTopic = async (req, res) => {
         if (status === 'approved_by_supervisor') {
             if (selectedTopicIndex !== undefined && student.proposedTopics[selectedTopicIndex]) {
                 const selected = student.proposedTopics[selectedTopicIndex];
+                
+                // Final check before supervisor approval
+                const alreadyApproved = await User.findOne({
+                    _id: { $ne: student._id },
+                    'approvedTopic.title': selected.title, // Simple check first
+                    topicStatus: 'approved'
+                });
+
+                if (alreadyApproved) {
+                    return res.status(400).json({ message: 'This topic has already been approved for another student.' });
+                }
+
                 student.approvedTopic = {
                     title: selected.title,
                     description: selected.description
@@ -131,6 +168,18 @@ const adminApproval = async (req, res) => {
         const student = await User.findById(id);
         if (!student) return res.status(404).json({ message: 'Student not found' });
         
+        if (status === 'approved' && student.approvedTopic) {
+            const duplicate = await User.findOne({
+                _id: { $ne: student._id },
+                'approvedTopic.title': student.approvedTopic.title,
+                topicStatus: 'approved'
+            });
+
+            if (duplicate) {
+                return res.status(400).json({ message: 'This topic has already been finalized for another student.' });
+            }
+        }
+
         student.topicStatus = status;
         
         await student.save();

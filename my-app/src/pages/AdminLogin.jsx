@@ -33,8 +33,8 @@ const AdminLogin = () => {
     return (
         <div className="auth-container" style={{ background: '#020617' }}>
             <div className="card auth-card" style={{ maxWidth: '450px', borderTop: '4px solid #ef4444', background: '#0f172a', color: 'white' }}>
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.875rem', marginBottom: '2rem', textDecoration: 'none' }}>
-                    <ArrowLeft size={16} /> Back to Home
+                <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', fontSize: '0.875rem', marginBottom: '2rem', textDecoration: 'none' }}>
+                    <ArrowLeft size={16} /> Back to Admin Portal
                 </Link>
 
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>

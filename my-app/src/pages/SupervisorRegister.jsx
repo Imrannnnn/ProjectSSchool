@@ -34,8 +34,8 @@ const SupervisorRegister = () => {
     return (
         <div className="auth-container">
             <div className="card auth-card">
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', textDecoration: 'none' }}>
-                    <ArrowLeft size={16} /> Back to Home
+                <Link to="/staff" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', textDecoration: 'none' }}>
+                    <ArrowLeft size={16} /> Back to Staff Portal
                 </Link>
 
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#0f62fe' }}>
