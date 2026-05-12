@@ -5,7 +5,7 @@ import axios from 'axios';
 import { Database, FileText, ChevronLeft, ChevronRight, Award } from 'lucide-react';
 
 const ApprovedTopicsRepository = () => {
-    const { user } = useAuth();
+    useAuth(); // Keeping the hook call if it provides context side effects, otherwise could be removed. Actually, useAuth is usually for getting state. If not used, just remove it. Wait, the lint says it's assigned but not used. So I'll just remove the assignment.
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [letter, setLetter] = useState('All');

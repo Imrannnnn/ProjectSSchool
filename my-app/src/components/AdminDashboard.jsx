@@ -5,11 +5,10 @@ import axios from 'axios';
 import { Shield, Users, Clock, CheckCircle2, XCircle, Search } from 'lucide-react';
 
 const AdminDashboard = () => {
-    const { user, socket } = useAuth();
+    const { socket } = useAuth();
     const [queue, setQueue] = useState([]);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [stats, setStats] = useState(null);
-    const [comment, setComment] = useState('');
     const [isChecking, setIsChecking] = useState(false);
 
     const fetchDashboardData = async () => {

@@ -20,7 +20,10 @@ const SupervisorDashboard = () => {
     }, []);
 
     useEffect(() => {
-        fetchStudents();
+        const initFetch = async () => {
+            await fetchStudents();
+        };
+        initFetch();
         if (socket) {
             socket.on('project_submitted', () => fetchStudents());
             socket.on('student_assigned', () => fetchStudents());

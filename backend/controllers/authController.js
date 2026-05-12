@@ -131,7 +131,7 @@ const refreshToken = async (req, res) => {
         await session.save();
 
         res.json({ accessToken, refreshToken: newRefreshToken });
-    } catch (error) {
+    } catch {
         res.status(401).json({ message: 'Refresh token failed' });
     }
 };

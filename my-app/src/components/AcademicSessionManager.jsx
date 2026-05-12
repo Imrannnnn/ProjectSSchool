@@ -16,7 +16,7 @@ const AcademicSessionManager = () => {
             const res = await axios.get(`${API_BASE_URL}/api/academic-sessions`);
             setSessions(res.data);
             setError(null);
-        } catch (err) {
+        } catch {
             setError('Failed to fetch academic sessions');
         } finally {
             setFetching(false);
@@ -48,7 +48,7 @@ const AcademicSessionManager = () => {
         try {
             await axios.delete(`${API_BASE_URL}/api/academic-sessions/${id}`);
             setSessions(sessions.filter(s => s._id !== id));
-        } catch (err) {
+        } catch {
             setError('Failed to delete session');
         }
     };

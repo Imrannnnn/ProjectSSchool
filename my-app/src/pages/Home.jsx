@@ -101,7 +101,7 @@ const Home = () => {
                             </div>
                             <div className="feature-item">
                                 <div className="feature-icon"><ArrowRight size={18} /></div>
-                                <span>Built-in duplication detection safeguarding academic integrity</span>
+                                <span>Official project verification and committee approval</span>
                             </div>
                         </div>
 

@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }) => {
         };
         fetchInitialUser();
         return () => { isMounted = false; };
-    }, []); // Run only once on mount
+    }, [connectSocket, logout, refreshTokenFunc]); // Run only once on mount (or when dependencies change, which they shouldn't as they are memoized)
 
     useEffect(() => {
         if (user) {

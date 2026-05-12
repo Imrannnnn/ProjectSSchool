@@ -25,7 +25,7 @@ const Register = () => {
                 const data = await res.json();
                 setAvailableSessions(data);
                 if (data.length > 0) setAcademicSession(data[0].name);
-            } catch (err) {
+            } catch {
                 console.error('Failed to fetch sessions');
             }
         };

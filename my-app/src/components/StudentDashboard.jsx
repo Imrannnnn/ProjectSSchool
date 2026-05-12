@@ -187,6 +187,7 @@ const StudentDashboard = () => {
                                             <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)' }}>{new Date(profile.lastDuplicationCheckAt).toLocaleString()}</span>
                                         </div>
                                     )}
+
                                 </div>
                             </div>
                         </div>

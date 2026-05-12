@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { areDuplicates } = require('../utils/topicEngine');
+// const { areDuplicates } = require('../utils/topicEngine');
 
 const submitTopics = async (req, res) => {
     try {
@@ -13,35 +13,13 @@ const submitTopics = async (req, res) => {
              return res.status(400).json({ message: 'You must propose at least two topics.' });
         }
 
-        // Check for duplicates within the submission itself
-        const titles = proposedTopics.map(t => t.title);
-        const internalDuplicate = titles.some((title, index) => 
-            titles.findIndex(t => areDuplicates(t, title)) !== index
-        );
-        if (internalDuplicate) {
-            return res.status(400).json({ message: 'Duplicate topics found in your proposal.' });
-        }
-
-        // Check against already approved topics in the system
-        const approvedUsers = await User.find({ 
-            'approvedTopic.title': { $exists: true },
-            topicStatus: 'approved'
-        }).select('approvedTopic.title');
-
-        for (const topic of proposedTopics) {
-            const isTaken = approvedUsers.some(u => areDuplicates(u.approvedTopic.title, topic.title));
-            if (isTaken) {
-                return res.status(400).json({ 
-                    message: `The topic "${topic.title}" has already been approved for another student. Please choose a different topic.` 
-                });
-            }
-        }
+        // Removed duplicate check on student phase as requested
         
         const user = await User.findById(req.user._id);
         user.proposedTopics = proposedTopics;
         user.topicStatus = 'pending';
         user.topicSubmittedAt = new Date();
-        user.lastDuplicationCheckAt = new Date();
+        // user.lastDuplicationCheckAt = new Date(); // Stopped tracking here
         await user.save();
         
         req.sendNotification(user.supervisor, 'project_submitted', user);
@@ -85,17 +63,6 @@ const reviewTopic = async (req, res) => {
             if (selectedTopicIndex !== undefined && student.proposedTopics[selectedTopicIndex]) {
                 const selected = student.proposedTopics[selectedTopicIndex];
                 
-                // Final check before supervisor approval
-                const alreadyApproved = await User.findOne({
-                    _id: { $ne: student._id },
-                    'approvedTopic.title': selected.title, // Simple check first
-                    topicStatus: 'approved'
-                });
-
-                if (alreadyApproved) {
-                    return res.status(400).json({ message: 'This topic has already been approved for another student.' });
-                }
-
                 student.approvedTopic = {
                     title: selected.title,
                     description: selected.description
@@ -109,7 +76,7 @@ const reviewTopic = async (req, res) => {
         }
         
         student.topicReviewedAt = new Date();
-        student.lastDuplicationCheckAt = new Date();
+        // student.lastDuplicationCheckAt = new Date(); // Stopped tracking here
         await student.save();
         req.sendNotification(student._id, 'project_status_updated', student);
         
@@ -189,6 +156,7 @@ const adminApproval = async (req, res) => {
             student.topicApprovedAt = new Date();
         }
         
+        student.lastDuplicationCheckAt = new Date();
         await student.save();
         req.sendNotification(student._id, 'project_status_updated', student);
         req.sendNotification(student.supervisor, 'project_status_updated', student);
