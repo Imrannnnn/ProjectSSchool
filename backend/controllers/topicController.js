@@ -40,6 +40,8 @@ const submitTopics = async (req, res) => {
         const user = await User.findById(req.user._id);
         user.proposedTopics = proposedTopics;
         user.topicStatus = 'pending';
+        user.topicSubmittedAt = new Date();
+        user.lastDuplicationCheckAt = new Date();
         await user.save();
         
         req.sendNotification(user.supervisor, 'project_submitted', user);
@@ -106,6 +108,8 @@ const reviewTopic = async (req, res) => {
             });
         }
         
+        student.topicReviewedAt = new Date();
+        student.lastDuplicationCheckAt = new Date();
         await student.save();
         req.sendNotification(student._id, 'project_status_updated', student);
         
@@ -181,6 +185,9 @@ const adminApproval = async (req, res) => {
         }
 
         student.topicStatus = status;
+        if (status === 'approved') {
+            student.topicApprovedAt = new Date();
+        }
         
         await student.save();
         req.sendNotification(student._id, 'project_status_updated', student);
@@ -208,6 +215,53 @@ const deleteMyTopic = async (req, res) => {
     }
 }
 
+const batchDuplicateCheck = async (req, res) => {
+    try {
+        const pendingStudents = await User.find({ topicStatus: 'approved_by_supervisor', role: 'student' });
+        
+        let rejectedCount = 0;
+        let approvedCount = 0;
+        
+        for (const student of pendingStudents) {
+            if (!student.approvedTopic?.title) continue;
+            
+            // Check against ALREADY approved topics
+            const isDuplicate = await User.findOne({
+                _id: { $ne: student._id },
+                'approvedTopic.title': student.approvedTopic.title,
+                topicStatus: 'approved'
+            });
+            
+            if (isDuplicate) {
+                student.topicStatus = 'correction';
+                student.supervisorFeedback = 'Topic rejected: This topic is a duplicate of an already approved project in our database.';
+                rejectedCount++;
+            } else {
+                student.topicStatus = 'approved';
+                student.topicApprovedAt = new Date();
+                approvedCount++;
+            }
+            
+            student.lastDuplicationCheckAt = new Date();
+            await student.save();
+            
+            // Send notifications
+            req.sendNotification(student._id, 'project_status_updated', student);
+            if (student.supervisor) {
+                req.sendNotification(student.supervisor, 'project_status_updated', student);
+            }
+        }
+        
+        res.json({ 
+            message: `Batch check complete. ${approvedCount} topics automatically approved, ${rejectedCount} topics rejected due to duplication.`,
+            approvedCount,
+            rejectedCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     submitProject: submitTopics,
     getMyProject: getMyTopic,
@@ -216,5 +270,6 @@ module.exports = {
     getAdminQueue,
     adminApproval,
     getApprovedProjects: getApprovedTopics,
-    deleteMyProject: deleteMyTopic
+    deleteMyProject: deleteMyTopic,
+    batchDuplicateCheck
 };

@@ -63,7 +63,10 @@ const Home = () => {
                                 </div>
                                 <div>
                                     <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b' }}>{user.name}</h3>
-                                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{user.identifier} &bull; {user.role.toUpperCase()}</span>
+                                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                        {user.identifier} &bull; {user.role.toUpperCase()} 
+                                        {user.academicSession && ` &bull; Session: ${user.academicSession}`}
+                                    </span>
                                 </div>
                             </div>
                         </div>

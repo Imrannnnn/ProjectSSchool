@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContextCore';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import API_BASE_URL from '../apiConfig';
 
 
 const Register = () => {
@@ -12,11 +13,31 @@ const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [academicSession, setAcademicSession] = useState('');
+    const [availableSessions, setAvailableSessions] = useState([]);
     const { register } = useAuth();
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const fetchSessions = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/academic-sessions`);
+                const data = await res.json();
+                setAvailableSessions(data);
+                if (data.length > 0) setAcademicSession(data[0].name);
+            } catch (err) {
+                console.error('Failed to fetch sessions');
+            }
+        };
+        fetchSessions();
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!academicSession) {
+            setError('Please select an academic session');
+            return;
+        }
         setError(null);
         setLoading(true);
         try {
@@ -24,7 +45,8 @@ const Register = () => {
                 role: 'student',
                 identifier: prefix + identifierNum,
                 name,
-                password
+                password,
+                academicSession
             });
             navigate('/');
         } catch (err) {
@@ -46,6 +68,21 @@ const Register = () => {
                 <h2>Student Registration</h2>
                 {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
                 <form onSubmit={handleSubmit}>
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Academic Session</label>
+                        <select 
+                            className="input-field" 
+                            value={academicSession}
+                            onChange={(e) => setAcademicSession(e.target.value)}
+                            required
+                            disabled={loading}
+                        >
+                            <option value="">Select Session</option>
+                            {availableSessions.map(s => (
+                                <option key={s._id} value={s.name}>{s.name}</option>
+                            ))}
+                        </select>
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                         <select 
                             className="input-field" 

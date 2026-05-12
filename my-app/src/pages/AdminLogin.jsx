@@ -19,7 +19,7 @@ const AdminLogin = () => {
         try {
             const user = await login(identifier, password);
             if (user.role !== 'admin') {
-                setError('Access Denied. This portal is for Super Administrators only.');
+                setError('Access Denied. This portal is for Project Committee Administrators only.');
                 setLoading(false);
                 return;
             }
@@ -41,7 +41,7 @@ const AdminLogin = () => {
                     <div style={{ width: 72, height: 72, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                         <ShieldCheck size={36} />
                     </div>
-                    <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', color: 'white' }}>Super Admin</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', color: 'white' }}>Project Committee Admin</h2>
                     <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.5rem' }}>Administrative Control Center Access</p>
                 </div>
 

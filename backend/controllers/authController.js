@@ -15,13 +15,13 @@ const generateTokens = (id) => {
 };
 
 const registerUser = async (req, res) => {
-    const { role, identifier, name, password, supervisorId } = req.body;
+    const { role, identifier, name, password, supervisorId, academicSession } = req.body;
 
     try {
         const userExists = await User.findOne({ identifier });
         if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-        const userObj = { role, identifier, name, password };
+        const userObj = { role, identifier, name, password, academicSession };
         
         // Automatic Assignment Logic
         if (role === 'student' && !supervisorId) {

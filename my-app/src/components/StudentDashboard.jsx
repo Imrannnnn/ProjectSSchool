@@ -5,21 +5,24 @@ import axios from 'axios';
 import { CheckCircle2, User, Inbox, RotateCcw, Activity } from 'lucide-react';
 
 const StudentDashboard = () => {
-    const { user, socket } = useAuth();
+    const { user, socket, updateUser } = useAuth();
     const [profile, setProfile] = useState(null);
     const [proposedTopics, setProposedTopics] = useState([
         { title: '', description: '' },
         { title: '', description: '' }
     ]);
     const [loading, setLoading] = useState(true);
+    const [availableSessions, setAvailableSessions] = useState([]);
 
     const fetchMyData = async () => {
         try {
-            const [projRes, profRes] = await Promise.all([
+            const [projRes, profRes, sessionsRes] = await Promise.all([
                 axios.get(API_BASE_URL + '/api/projects'),
-                axios.get(API_BASE_URL + '/api/users/me')
+                axios.get(API_BASE_URL + '/api/users/me'),
+                axios.get(API_BASE_URL + '/api/academic-sessions')
             ]);
             setProfile(profRes.data);
+            setAvailableSessions(sessionsRes.data);
             if (projRes.data) {
                 if (projRes.data.proposedTopics && projRes.data.proposedTopics.length > 0) {
                     setProposedTopics(projRes.data.proposedTopics);
@@ -43,6 +46,16 @@ const StudentDashboard = () => {
             }
         }
     }, [socket]);
+
+    const handleUpdateSession = async (session) => {
+        try {
+            const res = await axios.put(API_BASE_URL + '/api/users/me/profile', { academicSession: session });
+            setProfile(res.data);
+            updateUser({ academicSession: session });
+        } catch (error) {
+            console.error('Error updating session:', error);
+        }
+    };
 
     const handleSubmitProject = async (e) => {
         e.preventDefault();
@@ -120,9 +133,61 @@ const StudentDashboard = () => {
                                     {profile?.supervisor ? profile.supervisor.name : 'Waiting...'}
                                 </span>
                             </div>
-                            <div className="flex-between">
+                            <div className="flex-between" style={{ marginBottom: '0.75rem' }}>
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>DEPARTMENT</span>
                                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>Comp Science</span>
+                            </div>
+                            <div className="flex-between" style={{ marginBottom: '0.75rem' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>ACADEMIC SESSION</span>
+                                <select 
+                                    value={profile?.academicSession || ''} 
+                                    onChange={(e) => handleUpdateSession(e.target.value)}
+                                    style={{ 
+                                        padding: '0.25rem 0.5rem', 
+                                        borderRadius: '4px', 
+                                        border: '1px solid var(--border-color)',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        color: 'var(--accent-color)'
+                                    }}
+                                >
+                                    <option value="" disabled>Select Session</option>
+                                    {availableSessions.map(s => (
+                                        <option key={s._id} value={s.name}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--border-color)', paddingTop: '0.75rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                    <div className="flex-between">
+                                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>Account Created</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)' }}>{profile?.createdAt ? new Date(profile.createdAt).toLocaleString() : 'N/A'}</span>
+                                    </div>
+                                    {profile?.topicSubmittedAt && (
+                                        <div className="flex-between">
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>Topic Submitted</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)' }}>{new Date(profile.topicSubmittedAt).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {profile?.topicReviewedAt && (
+                                        <div className="flex-between">
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>Topic Reviewed</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)' }}>{new Date(profile.topicReviewedAt).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {profile?.topicApprovedAt && (
+                                        <div className="flex-between">
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>Topic Approved</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)' }}>{new Date(profile.topicApprovedAt).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {profile?.lastDuplicationCheckAt && (
+                                        <div className="flex-between">
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>Duplication Check</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-primary)' }}>{new Date(profile.lastDuplicationCheckAt).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

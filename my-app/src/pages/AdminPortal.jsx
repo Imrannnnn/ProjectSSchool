@@ -63,14 +63,14 @@ const AdminPortal = () => {
                             <span>System Administration</span>
                         </div>
 
-                        <h1 className="home-title">Super Admin Control Center</h1>
+                        <h1 className="home-title">Project Committee Admin Control Center</h1>
                         <p className="home-description">
                             Access the central dashboard to manage students, assign supervisors, and oversee the entire project portal infrastructure.
                         </p>
 
                         <div className="home-actions" style={{ marginBottom: '1.5rem' }}>
                             <Link to="/admin/login" className="btn btn-primary btn-lg" style={{ flex: 1, textAlign: 'center', backgroundColor: '#020617', color: 'white', borderColor: '#020617' }}>
-                                Super Admin Login
+                                Project Committee Admin Login
                             </Link>
                         </div>
                         

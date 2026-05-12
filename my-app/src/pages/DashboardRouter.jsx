@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContextCore';
-import { LogOut, LayoutDashboard, FolderKanban, Flag, Database, Activity, ShieldAlert, Users, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, FolderKanban, Flag, Database, Activity, ShieldAlert, Users, Menu, X, Calendar } from 'lucide-react';
 import StudentDashboard from '../components/StudentDashboard';
 import SupervisorDashboard from '../components/SupervisorDashboard';
 import AdminDashboard from '../components/AdminDashboard';
 import ApprovedTopicsRepository from '../components/ApprovedTopicsRepository';
 import AdminStudentAssignment from '../components/AdminStudentAssignment';
+import AcademicSessionManager from '../components/AcademicSessionManager';
 
 const DashboardRouter = () => {
     const { user, logout, socket } = useAuth();
@@ -84,6 +85,9 @@ const DashboardRouter = () => {
                             <div className={`nav-item ${activeTab === 'assignment' ? 'active' : ''}`} onClick={() => { setActiveTab('assignment'); closeSidebar(); }} style={{ paddingLeft: '2rem' }}>
                                 <Users size={16} /> Bulk Assignment
                             </div>
+                            <div className={`nav-item ${activeTab === 'sessions' ? 'active' : ''}`} onClick={() => { setActiveTab('sessions'); closeSidebar(); }} style={{ paddingLeft: '2rem' }}>
+                                <Calendar size={16} /> Academic Sessions
+                            </div>
                         </>
                     )}
                 </div>
@@ -101,7 +105,8 @@ const DashboardRouter = () => {
                         </button>
                         <h1 className="page-title">
                             {activeTab === 'dashboard' ? (user.role === 'admin' ? 'System Overview' : 'My Dashboard') : 
-                             activeTab === 'repository' ? 'Topics Repository' : 'Management'}
+                             activeTab === 'repository' ? 'Topics Repository' : 
+                             activeTab === 'sessions' ? 'Academic Sessions' : 'Management'}
                         </h1> 
                     </div>
                     
@@ -126,6 +131,7 @@ const DashboardRouter = () => {
                     {activeTab === 'dashboard' ? renderDashboard() : null}
                     {activeTab === 'repository' ? <ApprovedTopicsRepository /> : null}
                     {activeTab === 'assignment' ? <AdminStudentAssignment /> : null}
+                    {activeTab === 'sessions' ? <AcademicSessionManager /> : null}
                 </div>
             </div>
         </div>

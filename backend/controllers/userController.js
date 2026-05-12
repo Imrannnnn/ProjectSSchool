@@ -141,10 +141,27 @@ const deleteRangeAssignment = async (req, res) => {
     }
 };
 
+const updateProfile = async (req, res) => {
+    try {
+        const { academicSession } = req.body;
+        const user = await User.findById(req.user._id);
+        
+        if (academicSession) {
+            user.academicSession = academicSession;
+        }
+        
+        await user.save();
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 module.exports = { 
     getStudents, 
     assignSupervisor, 
     getMe, 
+    updateProfile,
     getAdminStats, 
     createRangeAssignment, 
     getRangeAssignments, 

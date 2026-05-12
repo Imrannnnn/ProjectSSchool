@@ -201,6 +201,14 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateUser = (updatedData) => {
+        setUser(prev => {
+            const newUser = { ...prev, ...updatedData };
+            localStorage.setItem('user', JSON.stringify(newUser));
+            return newUser;
+        });
+    };
+
     // Axios interceptors for handling tokens
     useEffect(() => {
         const reqInterceptor = axios.interceptors.request.use(
@@ -242,7 +250,7 @@ export const AuthProvider = ({ children }) => {
     }, [logout, refreshTokenFunc]);
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading, socket }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateUser, loading, socket }}>
             {!loading && children}
             {showInactivityWarning && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>

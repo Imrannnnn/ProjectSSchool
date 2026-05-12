@@ -95,6 +95,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/academic-sessions', require('./routes/academicSessionRoutes'));
 
 const PORT = process.env.PORT || 6001;
 

@@ -39,7 +39,12 @@ const userSchema = new mongoose.Schema({
         enum: ['none', 'pending', 'approved_by_supervisor', 'approved', 'correction'],
         default: 'none'
     },
-    supervisorFeedback: String
+    supervisorFeedback: String,
+    academicSession: String,
+    topicSubmittedAt: Date,
+    topicReviewedAt: Date,
+    topicApprovedAt: Date,
+    lastDuplicationCheckAt: Date
 }, { timestamps: true });
 
 userSchema.pre('save', async function() {

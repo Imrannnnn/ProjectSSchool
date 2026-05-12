@@ -4,6 +4,7 @@ const {
     getStudents, 
     assignSupervisor, 
     getMe, 
+    updateProfile,
     getAdminStats,
     createRangeAssignment,
     getRangeAssignments,
@@ -12,6 +13,7 @@ const {
 const { protect, adminOnly } = require('../middleware/auth');
 
 router.get('/me', protect, getMe);
+router.put('/me/profile', protect, updateProfile);
 router.get('/admin/stats', protect, adminOnly, getAdminStats);
 router.get('/students', protect, adminOnly, getStudents);
 router.post('/assign-supervisor', protect, adminOnly, assignSupervisor);
