@@ -1,5 +1,5 @@
 const User = require('../models/User');
-// const { areDuplicates } = require('../utils/topicEngine');
+const { areDuplicates } = require('../utils/topicEngine');
 
 const submitTopics = async (req, res) => {
     try {
@@ -140,14 +140,19 @@ const adminApproval = async (req, res) => {
         if (!student) return res.status(404).json({ message: 'Student not found' });
         
         if (status === 'approved' && student.approvedTopic) {
-            const duplicate = await User.findOne({
+            const approvedStudents = await User.find({
                 _id: { $ne: student._id },
-                'approvedTopic.title': student.approvedTopic.title,
-                topicStatus: 'approved'
+                topicStatus: 'approved',
+                role: 'student'
             });
 
+            const duplicate = approvedStudents.find(approvedStudent => 
+                approvedStudent.approvedTopic?.title &&
+                areDuplicates(approvedStudent.approvedTopic.title, student.approvedTopic.title)
+            );
+
             if (duplicate) {
-                return res.status(400).json({ message: 'This topic has already been finalized for another student.' });
+                return res.status(400).json({ message: `This topic is too similar to an already approved project "${duplicate.approvedTopic.title}".` });
             }
         }
 
@@ -185,6 +190,48 @@ const deleteMyTopic = async (req, res) => {
 
 const batchDuplicateCheck = async (req, res) => {
     try {
+        // Fetch all approved students
+        const approvedStudents = await User.find({ topicStatus: 'approved', role: 'student' });
+        
+        // Sort approved students by approved date (earliest first) to keep the first approved one
+        const getApprovalTime = (s) => {
+            if (s.topicApprovedAt) return new Date(s.topicApprovedAt).getTime();
+            if (s.topicReviewedAt) return new Date(s.topicReviewedAt).getTime();
+            if (s.topicSubmittedAt) return new Date(s.topicSubmittedAt).getTime();
+            return new Date(s.createdAt || 0).getTime();
+        };
+        approvedStudents.sort((a, b) => getApprovalTime(a) - getApprovalTime(b));
+
+        const keptApprovedStudents = [];
+        let approvedRejectedCount = 0;
+
+        // Clean up any duplicates within already approved projects
+        for (const student of approvedStudents) {
+            if (!student.approvedTopic?.title) continue;
+
+            const duplicateOf = keptApprovedStudents.find(kept => 
+                areDuplicates(kept.approvedTopic.title, student.approvedTopic.title)
+            );
+
+            if (duplicateOf) {
+                student.topicStatus = 'correction';
+                student.supervisorFeedback = `Topic rejected: This topic is a duplicate of an already approved project (${duplicateOf.approvedTopic.title}) in our database.`;
+                student.lastDuplicationCheckAt = new Date();
+                await student.save();
+                
+                // Send notifications
+                req.sendNotification(student._id, 'project_status_updated', student);
+                if (student.supervisor) {
+                    req.sendNotification(student.supervisor, 'project_status_updated', student);
+                }
+                
+                approvedRejectedCount++;
+            } else {
+                keptApprovedStudents.push(student);
+            }
+        }
+
+        // Now check pending students in queue
         const pendingStudents = await User.find({ topicStatus: 'approved_by_supervisor', role: 'student' });
         
         let rejectedCount = 0;
@@ -193,21 +240,20 @@ const batchDuplicateCheck = async (req, res) => {
         for (const student of pendingStudents) {
             if (!student.approvedTopic?.title) continue;
             
-            // Check against ALREADY approved topics
-            const isDuplicate = await User.findOne({
-                _id: { $ne: student._id },
-                'approvedTopic.title': student.approvedTopic.title,
-                topicStatus: 'approved'
-            });
+            // Check against kept approved topics
+            const duplicateOf = keptApprovedStudents.find(kept => 
+                areDuplicates(kept.approvedTopic.title, student.approvedTopic.title)
+            );
             
-            if (isDuplicate) {
+            if (duplicateOf) {
                 student.topicStatus = 'correction';
-                student.supervisorFeedback = 'Topic rejected: This topic is a duplicate of an already approved project in our database.';
+                student.supervisorFeedback = `Topic rejected: This topic is a duplicate of an already approved project (${duplicateOf.approvedTopic.title}) in our database.`;
                 rejectedCount++;
             } else {
                 student.topicStatus = 'approved';
                 student.topicApprovedAt = new Date();
                 approvedCount++;
+                keptApprovedStudents.push(student); // Add to keptApprovedStudents so subsequent checks in this batch see it
             }
             
             student.lastDuplicationCheckAt = new Date();
@@ -220,10 +266,16 @@ const batchDuplicateCheck = async (req, res) => {
             }
         }
         
+        let message = `Batch check complete. ${approvedCount} topics automatically approved, ${rejectedCount} topics rejected due to duplication.`;
+        if (approvedRejectedCount > 0) {
+            message += ` Also resolved ${approvedRejectedCount} pre-existing duplicate approved topic(s) by keeping the first approved and rejecting the rest.`;
+        }
+
         res.json({ 
-            message: `Batch check complete. ${approvedCount} topics automatically approved, ${rejectedCount} topics rejected due to duplication.`,
+            message,
             approvedCount,
-            rejectedCount
+            rejectedCount,
+            approvedRejectedCount
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
