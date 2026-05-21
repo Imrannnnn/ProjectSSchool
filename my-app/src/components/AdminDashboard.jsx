@@ -101,6 +101,25 @@ const AdminDashboard = () => {
                     <div className="stat-value">{stats?.totals.supervisors || '0'}</div>
                 </div>
             </div>
+            
+            {stats?.departmentStats && stats.departmentStats.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Department Overview</h3>
+                    <div className="stat-card-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+                        {stats.departmentStats.map((dept, idx) => (
+                            <div key={idx} className="stat-card" style={{ borderTop: '3px solid #3b82f6' }}>
+                                <div className="stat-title">{dept.name} <Users size={16} /></div>
+                                <div className="stat-value" style={{ fontSize: '1.5rem' }}>
+                                    {dept.studentCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {dept.capacity}</span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                                    Prefix: {dept.prefix}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="stat-card-row" style={{ gridTemplateColumns: 'minmax(0, 2fr) 1fr', alignItems: 'start' }}>
                 <div>

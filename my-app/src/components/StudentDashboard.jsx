@@ -9,6 +9,7 @@ const StudentDashboard = () => {
     const [profile, setProfile] = useState(null);
     const [proposedTopics, setProposedTopics] = useState([
         { title: '', description: '' },
+        { title: '', description: '' },
         { title: '', description: '' }
     ]);
     const [loading, setLoading] = useState(true);
@@ -83,6 +84,7 @@ const StudentDashboard = () => {
         if (!profile || profile.topicStatus === 'none') {
             setProposedTopics([
                 { title: '', description: '' },
+                { title: '', description: '' },
                 { title: '', description: '' }
             ]);
             return;
@@ -93,6 +95,7 @@ const StudentDashboard = () => {
         try {
             await axios.delete(API_BASE_URL + '/api/projects');
             setProposedTopics([
+                { title: '', description: '' },
                 { title: '', description: '' },
                 { title: '', description: '' }
             ]);
@@ -234,7 +237,7 @@ const StudentDashboard = () => {
                     {status !== 'approved' && (
                         <div className="card">
                             <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.125rem' }}>Propose Topics</h4>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0 0 1.5rem 0' }}>Provide at least two topic choices for your supervisor to review.</p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0 0 1.5rem 0' }}>Provide at least three topic choices for your supervisor to review.</p>
                             
                             <form onSubmit={handleSubmitProject}>
                                 {proposedTopics.map((topic, index) => (

@@ -6,7 +6,7 @@ import API_BASE_URL from '../apiConfig';
 
 
 const Register = () => {
-    const [prefix, setPrefix] = useState('HND II/swd/');
+    const [prefix, setPrefix] = useState('');
     const [identifierNum, setIdentifierNum] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
@@ -15,6 +15,7 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const [academicSession, setAcademicSession] = useState('');
     const [availableSessions, setAvailableSessions] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const { register } = useAuth();
     const navigate = useNavigate();
 
@@ -29,13 +30,28 @@ const Register = () => {
                 console.error('Failed to fetch sessions');
             }
         };
+        const fetchDepartments = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/departments`);
+                const data = await res.json();
+                setDepartments(data);
+                if (data.length > 0) setPrefix(data[0].prefix);
+            } catch {
+                console.error('Failed to fetch departments');
+            }
+        };
         fetchSessions();
+        fetchDepartments();
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!academicSession) {
             setError('Please select an academic session');
+            return;
+        }
+        if (!/^\d+$/.test(identifierNum)) {
+            setError('Registration number suffix must contain only numbers (e.g. 054)');
             return;
         }
         setError(null);
@@ -91,8 +107,9 @@ const Register = () => {
                             onChange={(e) => setPrefix(e.target.value)}
                             disabled={loading}
                         >
-                            <option value="HND II/swd/">HND II/swd/</option>
-                            <option value="HND II/NCC/">HND II/NCC/</option>
+                            {departments.map(d => (
+                                <option key={d._id} value={d.prefix}>{d.prefix}</option>
+                            ))}
                         </select>
                         <input 
                             type="text" 
@@ -103,6 +120,8 @@ const Register = () => {
                             onChange={(e) => setIdentifierNum(e.target.value)}
                             required
                             disabled={loading}
+                            pattern="\d+"
+                            title="Please enter numbers only"
                         />
                     </div>
                     <input 

@@ -11,10 +11,13 @@ const AdminStudentAssignment = () => {
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [targetSupervisor, setTargetSupervisor] = useState('');
     const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
+    const [departments, setDepartments] = useState([]);
+    const [selectedDeptFilter, setSelectedDeptFilter] = useState('All');
     
     // Range select state
     const [rangeStart, setRangeStart] = useState('');
     const [rangeEnd, setRangeEnd] = useState('');
+    const [rangePrefix, setRangePrefix] = useState('');
     
     const [ranges, setRanges] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ const AdminStudentAssignment = () => {
                 const rangeRes = await axios.get(API_BASE_URL + '/api/users/ranges', {
                     headers: { Authorization: `Bearer ${user.token}` }
                 });
+                const deptRes = await axios.get(API_BASE_URL + '/api/departments');
                 
                 // Sort students alphabetically by identifier natively
                 const sortedStudents = stdRes.data.sort((a, b) => a.identifier.localeCompare(b.identifier));
@@ -39,6 +43,10 @@ const AdminStudentAssignment = () => {
                 setStudents(sortedStudents);
                 setSupervisors(supRes.data);
                 setRanges(rangeRes.data);
+                setDepartments(deptRes.data);
+                if (deptRes.data.length > 0) {
+                    setRangePrefix(deptRes.data[0].prefix);
+                }
                 
                 if (supRes.data.length > 0) {
                     setTargetSupervisor(supRes.data[0]._id);
@@ -60,7 +68,11 @@ const AdminStudentAssignment = () => {
         }
     };
 
-    const displayedStudents = showUnassignedOnly ? students.filter(s => !s.supervisor) : students;
+    const displayedStudents = students.filter(s => {
+        if (showUnassignedOnly && s.supervisor) return false;
+        if (selectedDeptFilter !== 'All' && !s.identifier.startsWith(selectedDeptFilter)) return false;
+        return true;
+    });
 
     const toggleAll = () => {
         if (selectedStudents.length === displayedStudents.length) {
@@ -76,26 +88,20 @@ const AdminStudentAssignment = () => {
     };
 
     const handleRangeSelect = () => {
-        if (!rangeStart || !rangeEnd) return;
+        if (!rangeStart || !rangeEnd || !rangePrefix) return;
         
-        const startNum = extractNumber(rangeStart);
-        const endNum = extractNumber(rangeEnd);
+        const startNum = parseInt(rangeStart, 10);
+        const endNum = parseInt(rangeEnd, 10);
         
         let idsToSelect = [];
         
-        if (startNum !== null && endNum !== null) {
-            // Numeric comparison for trailing numbers (e.g. 100 to 200, or CSC/100 to CSC/200)
-            const basePrefix = rangeStart.replace(/\d+$/, '');
+        if (!isNaN(startNum) && !isNaN(endNum)) {
             idsToSelect = students.filter(s => {
                 const sNum = extractNumber(s.identifier);
                 const sPrefix = s.identifier.replace(/\d+$/, '');
-                // Verify the prefix matches if one exists to prevent mixing different departments accidentally
-                if (basePrefix && sPrefix !== basePrefix) return false;
+                if (sPrefix !== rangePrefix) return false;
                 return sNum !== null && sNum >= startNum && sNum <= endNum;
             }).map(s => s._id);
-        } else {
-            // Lexicographical string comparison fallback
-            idsToSelect = students.filter(s => s.identifier >= rangeStart && s.identifier <= rangeEnd).map(s => s._id);
         }
         
         // Merge with currently selected
@@ -106,16 +112,19 @@ const AdminStudentAssignment = () => {
     };
 
     const handleSaveRange = async () => {
-        if (!rangeStart || !rangeEnd) {
-            setMessage('Please enter both start and end registration numbers.');
+        if (!rangeStart || !rangeEnd || !rangePrefix) {
+            setMessage('Please enter both start and end registration numbers, and select a prefix.');
             return;
         }
 
         if (!window.confirm(`Save this range? Any new students registering within this range will be automatically assigned to the selected supervisor.`)) return;
 
+        const fullStartId = rangePrefix + rangeStart;
+        const fullEndId = rangePrefix + rangeEnd;
+
         try {
             const res = await axios.post(API_BASE_URL + '/api/users/ranges', 
-                { supervisorId: targetSupervisor, startIdentifier: rangeStart, endIdentifier: rangeEnd },
+                { supervisorId: targetSupervisor, startIdentifier: fullStartId, endIdentifier: fullEndId },
                 { headers: { Authorization: `Bearer ${user.token}` } }
             );
             
@@ -152,6 +161,21 @@ const AdminStudentAssignment = () => {
         } catch (error) {
             console.error(error);
             setMessage('Failed to delete range.');
+        }
+    };
+
+    const handleUpdateCapacity = async (deptId, newCapacity) => {
+        try {
+            const res = await axios.put(`${API_BASE_URL}/api/departments/${deptId}`, 
+                { capacity: newCapacity },
+                { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+            setDepartments(departments.map(d => d._id === deptId ? res.data : d));
+            setMessage('Capacity updated successfully.');
+            setTimeout(() => setMessage(''), 3000);
+        } catch (error) {
+            console.error(error);
+            setMessage('Failed to update capacity.');
         }
     };
 
@@ -208,28 +232,43 @@ const AdminStudentAssignment = () => {
                         <Filter size={18} /> Select by Range
                     </h3>
                     
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>From (Reg No.)</label>
-                            <input 
-                                type="text" 
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexDirection: 'column' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Department Prefix</label>
+                            <select 
                                 className="input-field" 
-                                placeholder="e.g. 100" 
-                                value={rangeStart}
-                                onChange={e => setRangeStart(e.target.value)}
+                                value={rangePrefix}
+                                onChange={e => setRangePrefix(e.target.value)}
                                 style={{ background: 'white' }}
-                            />
+                            >
+                                {departments.map(d => (
+                                    <option key={d._id} value={d.prefix}>{d.prefix}</option>
+                                ))}
+                            </select>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>To (Reg No.)</label>
-                            <input 
-                                type="text" 
-                                className="input-field" 
-                                placeholder="e.g. 200" 
-                                value={rangeEnd}
-                                onChange={e => setRangeEnd(e.target.value)}
-                                style={{ background: 'white' }}
-                            />
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>From (Number)</label>
+                                <input 
+                                    type="number" 
+                                    className="input-field" 
+                                    placeholder="e.g. 1" 
+                                    value={rangeStart}
+                                    onChange={e => setRangeStart(e.target.value)}
+                                    style={{ background: 'white' }}
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>To (Number)</label>
+                                <input 
+                                    type="number" 
+                                    className="input-field" 
+                                    placeholder="e.g. 50" 
+                                    value={rangeEnd}
+                                    onChange={e => setRangeEnd(e.target.value)}
+                                    style={{ background: 'white' }}
+                                />
+                            </div>
                         </div>
                     </div>
                     
@@ -311,6 +350,28 @@ const AdminStudentAssignment = () => {
                             </div>
                         )}
                     </div>
+
+                    <div style={{ marginTop: '2rem', borderTop: '2px dashed #e2e8f0', paddingTop: '1.5rem' }}>
+                        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            Department Capacity Config
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {departments.map(d => (
+                                <div key={d._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{d.name}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <input 
+                                            type="number" 
+                                            defaultValue={d.capacity} 
+                                            onBlur={(e) => handleUpdateCapacity(d._id, parseInt(e.target.value, 10))}
+                                            style={{ width: '60px', padding: '0.2rem', fontSize: '0.8rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                                        />
+                                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>students</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* STUDENTS TABLE */}
@@ -319,6 +380,18 @@ const AdminStudentAssignment = () => {
                         <h3 style={{ margin: 0, fontSize: '1rem' }}>Overall Student Roster</h3>
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <select 
+                                className="input-field" 
+                                style={{ marginBottom: 0, padding: '0.2rem 0.5rem', minWidth: '120px' }}
+                                value={selectedDeptFilter}
+                                onChange={e => { setSelectedDeptFilter(e.target.value); setSelectedStudents([]); }}
+                            >
+                                <option value="All">All Departments</option>
+                                {departments.map(d => (
+                                    <option key={d._id} value={d.prefix}>{d.name} ({d.prefix})</option>
+                                ))}
+                            </select>
+
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', background: showUnassignedOnly ? '#fef2f2' : 'transparent', padding: '0.2rem 0.6rem', borderRadius: '4px', border: showUnassignedOnly ? '1px solid #fecaca' : '1px solid transparent', color: showUnassignedOnly ? '#b91c1c' : 'var(--text-secondary)' }}>
                                 <input type="checkbox" checked={showUnassignedOnly} onChange={(e) => { setShowUnassignedOnly(e.target.checked); setSelectedStudents([]); }} style={{ cursor: 'pointer' }} />
                                 Show Unassigned Only

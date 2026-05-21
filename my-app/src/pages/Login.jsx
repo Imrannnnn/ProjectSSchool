@@ -1,20 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContextCore';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-
+import API_BASE_URL from '../apiConfig';
 const Login = () => {
-    const [prefix, setPrefix] = useState('HND II/swd/');
+    const [prefix, setPrefix] = useState('');
     const [identifierNum, setIdentifierNum] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [departments, setDepartments] = useState([]);
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/departments`);
+                const data = await res.json();
+                setDepartments(data);
+                if (data.length > 0) setPrefix(data[0].prefix);
+            } catch {
+                console.error('Failed to fetch departments');
+            }
+        };
+        fetchDepartments();
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!/^\d+$/.test(identifierNum)) {
+            setError('Registration number suffix must contain only numbers (e.g. 054)');
+            return;
+        }
         setError(null);
         setLoading(true);
         try {
@@ -58,8 +77,9 @@ const Login = () => {
                                 onChange={(e) => setPrefix(e.target.value)}
                                 disabled={loading}
                             >
-                                <option value="HND II/swd/">HND II/swd/</option>
-                                <option value="HND II/NCC/">HND II/NCC/</option>
+                                {departments.map(d => (
+                                    <option key={d._id} value={d.prefix}>{d.prefix}</option>
+                                ))}
                             </select>
                             <input
                                 type="text"
@@ -70,6 +90,8 @@ const Login = () => {
                                 onChange={(e) => setIdentifierNum(e.target.value)}
                                 required
                                 disabled={loading}
+                                pattern="\d+"
+                                title="Please enter numbers only"
                             />
                         </div>
                     </div>
@@ -89,6 +111,7 @@ const Login = () => {
                             />
                             <button
                                 type="button"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 onClick={() => setShowPassword(!showPassword)}
                                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                                 disabled={loading}
