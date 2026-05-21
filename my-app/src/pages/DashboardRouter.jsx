@@ -7,6 +7,8 @@ import AdminDashboard from '../components/AdminDashboard';
 import ApprovedTopicsRepository from '../components/ApprovedTopicsRepository';
 import AdminStudentAssignment from '../components/AdminStudentAssignment';
 import AcademicSessionManager from '../components/AcademicSessionManager';
+import DepartmentProgrammes from '../components/DepartmentProgrammes';
+import AdminAnalytics from '../components/AdminAnalytics';
 
 const DashboardRouter = () => {
     const { user, logout, socket } = useAuth();
@@ -75,10 +77,14 @@ const DashboardRouter = () => {
 
                     {user.role === 'admin' && (
                         <>
-                            <div className="nav-item"><FolderKanban size={18} /> Student Progress</div>
+                            <div className={`nav-item ${activeTab === 'department-programmes' ? 'active' : ''}`} onClick={() => { setActiveTab('department-programmes'); closeSidebar(); }}>
+                                <FolderKanban size={18} /> Department Programmes
+                            </div>
                             <div className="nav-item"><Flag size={18} /> Milestones</div>
                             <div className={`nav-item ${activeTab === 'repository' ? 'active' : ''}`} onClick={() => { setActiveTab('repository'); closeSidebar(); }}><Database size={18} /> Approved Topics</div>
-                            <div className="nav-item"><Activity size={18} /> Analytics</div>
+                            <div className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveTab('analytics'); closeSidebar(); }}>
+                                <Activity size={18} /> Analytics
+                            </div>
                             <div className="nav-item" style={{ marginTop: '1rem', color: 'var(--accent-color)', fontWeight: 600 }}>
                                 <ShieldAlert size={18} /> Admin Panel
                             </div>
@@ -104,9 +110,11 @@ const DashboardRouter = () => {
                             <Menu size={24} />
                         </button>
                         <h1 className="page-title">
-                            {activeTab === 'dashboard' ? (user.role === 'admin' ? 'System Overview' : 'My Dashboard') : 
-                             activeTab === 'repository' ? 'Topics Repository' : 
-                             activeTab === 'sessions' ? 'Academic Sessions' : 'Management'}
+                            {activeTab === 'dashboard' ? (user.role === 'admin' ? 'System Overview' : 'My Dashboard') :
+                             activeTab === 'repository' ? 'Topics Repository' :
+                             activeTab === 'sessions' ? 'Academic Sessions' :
+                             activeTab === 'department-programmes' ? 'Department Programmes' :
+                             activeTab === 'analytics' ? 'Analytics' : 'Management'}
                         </h1> 
                     </div>
                     
@@ -129,6 +137,8 @@ const DashboardRouter = () => {
                 
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     {activeTab === 'dashboard' ? renderDashboard() : null}
+                    {activeTab === 'department-programmes' ? <DepartmentProgrammes /> : null}
+                    {activeTab === 'analytics' ? <AdminAnalytics /> : null}
                     {activeTab === 'repository' ? <ApprovedTopicsRepository /> : null}
                     {activeTab === 'assignment' ? <AdminStudentAssignment /> : null}
                     {activeTab === 'sessions' ? <AcademicSessionManager /> : null}
