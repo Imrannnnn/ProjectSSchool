@@ -9,8 +9,8 @@ const submitTopics = async (req, res) => {
              return res.status(400).json({ message: 'UNASSIGNED: You have not been assigned a supervisor yet.' });
         }
 
-        if (!proposedTopics || proposedTopics.length < 2) {
-             return res.status(400).json({ message: 'You must propose at least two topics.' });
+        if (!proposedTopics || proposedTopics.length < 3) {
+             return res.status(400).json({ message: 'You must propose at least three topics.' });
         }
 
         // Removed duplicate check on student phase as requested

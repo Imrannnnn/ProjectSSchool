@@ -20,6 +20,20 @@ const getAdminStats = async (req, res) => {
         const unassignedStudents = await User.countDocuments({ role: 'student', supervisor: { $exists: false } });
         const approvedProjects = await User.countDocuments({ topicStatus: 'approved' });
         
+        const DepartmentConfig = require('../models/DepartmentConfig');
+        const departments = await DepartmentConfig.find();
+        
+        const departmentStats = await Promise.all(departments.map(async (dept) => {
+            // Find students whose identifier starts with the department prefix
+            const count = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + dept.prefix } });
+            return {
+                name: dept.name,
+                prefix: dept.prefix,
+                capacity: dept.capacity,
+                studentCount: count
+            };
+        }));
+        
         const supervisors = await User.find({ role: 'supervisor' }).select('name identifier');
         const supervisorStats = await Promise.all(supervisors.map(async (sup) => {
             const studentCount = await User.countDocuments({ supervisor: sup._id });
@@ -40,6 +54,7 @@ const getAdminStats = async (req, res) => {
                 unassignedStudents,
                 approvedProjects
             },
+            departmentStats,
             supervisorStats
         });
     } catch (err) {
