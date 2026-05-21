@@ -24,13 +24,20 @@ const getAdminStats = async (req, res) => {
         const departments = await DepartmentConfig.find();
         
         const departmentStats = await Promise.all(departments.map(async (dept) => {
-            // Find students whose identifier starts with the department prefix
-            const count = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + dept.prefix } });
+            const registeredCount = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + dept.prefix } });
+            const assignedCount = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + dept.prefix }, supervisor: { $exists: true } });
+            const submittedCount = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + dept.prefix }, "proposedTopics.0": { $exists: true } });
+            const notSubmittedCount = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + dept.prefix }, "proposedTopics.0": { $exists: false } });
             return {
+                _id: dept._id,
                 name: dept.name,
                 prefix: dept.prefix,
                 capacity: dept.capacity,
-                studentCount: count
+                studentCount: registeredCount,
+                registeredCount,
+                assignedCount,
+                submittedCount,
+                notSubmittedCount
             };
         }));
         

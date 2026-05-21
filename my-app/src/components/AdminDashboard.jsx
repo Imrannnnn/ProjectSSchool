@@ -2,7 +2,7 @@ import API_BASE_URL from '../apiConfig';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContextCore';
 import axios from 'axios';
-import { Shield, Users, Clock, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { Shield, Users, Clock, CheckCircle2, XCircle, Search, UserCheck, FileText, AlertCircle, Save } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { socket } = useAuth();
@@ -103,20 +103,117 @@ const AdminDashboard = () => {
             </div>
             
             {stats?.departmentStats && stats.departmentStats.length > 0 && (
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Department Overview</h3>
-                    <div className="stat-card-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-                        {stats.departmentStats.map((dept, idx) => (
-                            <div key={idx} className="stat-card" style={{ borderTop: '3px solid #3b82f6' }}>
-                                <div className="stat-title">{dept.name} <Users size={16} /></div>
-                                <div className="stat-value" style={{ fontSize: '1.5rem' }}>
-                                    {dept.studentCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {dept.capacity}</span>
+                <div style={{ marginBottom: '2.5rem' }}>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Shield size={22} style={{ color: 'var(--accent-color)' }} /> Department Enrollment & Progress Oversight
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                        {stats.departmentStats.map((dept, idx) => {
+                            const registeredPercentage = dept.capacity > 0 ? Math.min(100, Math.round((dept.registeredCount / dept.capacity) * 100)) : 0;
+                            const isAtCapacity = dept.registeredCount >= dept.capacity;
+
+                            return (
+                                <div key={idx} className="card animate-fade-in" style={{ 
+                                    borderTop: isAtCapacity ? '4px solid var(--danger)' : '4px solid var(--accent-color)', 
+                                    padding: '1.5rem', 
+                                    background: 'white',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1.25rem'
+                                }}>
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                            <div>
+                                                <h4 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{dept.name}</h4>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>Prefix: {dept.prefix}</span>
+                                            </div>
+                                            <span className={`badge ${isAtCapacity ? 'badge-danger' : 'badge-approved'}`} style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 700 }}>
+                                                {isAtCapacity ? 'CAPACITY FULL' : 'ACTIVE'}
+                                            </span>
+                                        </div>
+
+                                        {/* Capacity Config quick input */}
+                                        <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem' }}>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Users size={14} /> Capacity Limit:</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <input 
+                                                    type="number"
+                                                    id={`capacity-input-${dept._id}`}
+                                                    defaultValue={dept.capacity}
+                                                    style={{ width: '65px', padding: '0.25rem', fontSize: '0.85rem', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold' }}
+                                                />
+                                                <button 
+                                                    className="btn btn-outline" 
+                                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', height: 'auto', margin: 0, minWidth: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'white' }}
+                                                    onClick={async () => {
+                                                        const input = document.getElementById(`capacity-input-${dept._id}`);
+                                                        const newCap = parseInt(input.value, 10);
+                                                        if (isNaN(newCap) || newCap < 0) {
+                                                            alert('Please enter a valid capacity.');
+                                                            return;
+                                                        }
+                                                        try {
+                                                            await axios.put(`${API_BASE_URL}/api/departments/${dept._id}`, { capacity: newCap });
+                                                            alert(`Successfully updated capacity for ${dept.name} to ${newCap}!`);
+                                                            fetchDashboardData();
+                                                        } catch (error) {
+                                                            console.error(error);
+                                                            alert('Failed to update capacity.');
+                                                        }
+                                                    }}
+                                                >
+                                                    <Save size={12} /> Save
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Fill rate progress bar */}
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.35rem' }}>
+                                            <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Enrollment Fill Rate</span>
+                                            <span style={{ fontWeight: 700, color: isAtCapacity ? 'var(--danger)' : 'var(--accent-color)' }}>{registeredPercentage}%</span>
+                                        </div>
+                                        <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ 
+                                                height: '100%', 
+                                                width: `${registeredPercentage}%`, 
+                                                background: isAtCapacity ? 'var(--danger)' : 'var(--success)', 
+                                                borderRadius: '4px',
+                                                transition: 'width 0.4s ease'
+                                            }}></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Detailed breakdown metrics grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                        <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', borderLeft: '3px solid #3b82f6', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                            <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Users size={12} /> REGISTERED</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>
+                                                {dept.registeredCount} <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#94a3b8' }}>/ {dept.capacity}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', borderLeft: '3px solid #10b981', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                            <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><UserCheck size={12} /> ASSIGNED</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>{dept.assignedCount}</div>
+                                        </div>
+
+                                        <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', borderLeft: '3px solid #8b5cf6', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                            <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><FileText size={12} /> SUBMITTED</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>{dept.submittedCount}</div>
+                                        </div>
+
+                                        <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px', borderLeft: '3px solid #f59e0b', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                            <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}><AlertCircle size={12} /> PENDING SUB.</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>{dept.notSubmittedCount}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                                    Prefix: {dept.prefix}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}

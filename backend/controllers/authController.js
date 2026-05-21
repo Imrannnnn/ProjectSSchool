@@ -21,6 +21,21 @@ const registerUser = async (req, res) => {
         const userExists = await User.findOne({ identifier });
         if (userExists) return res.status(400).json({ message: 'User already exists' });
 
+        // Enforce department capacity limit for students
+        if (role === 'student') {
+            const DepartmentConfig = require('../models/DepartmentConfig');
+            const departments = await DepartmentConfig.find();
+            const matchingDept = departments.find(d => identifier.startsWith(d.prefix));
+            if (matchingDept) {
+                const currentCount = await User.countDocuments({ role: 'student', identifier: { $regex: '^' + matchingDept.prefix } });
+                if (currentCount >= matchingDept.capacity) {
+                    return res.status(400).json({ 
+                        message: `Registration failed. The capacity limit of ${matchingDept.capacity} students for department ${matchingDept.name} has been reached. Please contact the administrator.` 
+                    });
+                }
+            }
+        }
+
         const userObj = { role, identifier, name, password, academicSession };
         
         // Automatic Assignment Logic
